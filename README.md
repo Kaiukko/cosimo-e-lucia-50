@@ -1,115 +1,133 @@
 # 🎉 Event Gallery
 
-Galleria foto e video condivisa per eventi — ospiti possono caricare media in tempo reale.
+Galleria foto e video condivisa per eventi — gli ospiti caricano media in tempo reale.
 
 **Stack:** React · Supabase (Storage + Database + Realtime) · Vercel
 
 ---
 
-## Setup in 5 passi
+## Personalizzazione rapida
 
-### 1. Crea il progetto Supabase
+Apri **`src/config.js`** e modifica:
 
-1. Vai su [supabase.com](https://supabase.com) e crea un account
-2. Crea un nuovo progetto
-3. Vai su **Storage** → crea un bucket chiamato `event-media` con **Public: ON**
-4. Vai su **SQL Editor** ed esegui:
+```js
+eventName:     "Cosimo & Lucia",      // nome mostrato ovunque
+eventSubtitle: "14 Giugno 2025",      // data o sottotitolo (lascia "" per nasconderlo)
+appUrl:        "https://...",         // URL Vercel — usato per il QR code
+
+colors: {
+  accent:     "#f0c040",   // colore bottoni e accenti (oro di default)
+  background: "#0d0d0d",   // sfondo app
+  card:       "#111111",   // sfondo card
+  text:       "#f5f0e8",   // testo principale
+  textMuted:  "#666666",   // testo secondario
+},
+
+maxFilesPerUpload: 10,   // quante foto si possono caricare in una volta
+maxFileSizeMB:     50,   // limite per singolo file
+```
+
+---
+
+## Setup Supabase
+
+### 1. Crea il progetto
+Vai su [supabase.com](https://supabase.com), crea un account e un nuovo progetto.
+
+### 2. Crea il bucket Storage
+**Storage → New bucket** → nome: `event-media` → **Public: ON**
+
+### 3. Esegui questo SQL (SQL Editor)
 
 ```sql
+-- Tabella post
 create table posts (
   id uuid primary key default gen_random_uuid(),
-  author text,
-  avatar text,
-  color text,
-  type text,
-  url text,
-  caption text,
+  author text, avatar text, color text,
+  type text, url text, caption text,
   likes int default 0,
   created_at timestamptz default now()
 );
-
 alter table posts enable row level security;
+create policy "read"   on posts for select using (true);
+create policy "insert" on posts for insert with check (true);
+create policy "update" on posts for update using (true);
 
-create policy "Tutti possono leggere"   on posts for select using (true);
-create policy "Tutti possono inserire"  on posts for insert with check (true);
-create policy "Tutti possono aggiornare i like" on posts for update using (true);
+-- Policy Storage
+create policy "Chiunque può caricare"
+  on storage.objects for insert
+  with check (bucket_id = 'event-media');
+
+create policy "Chiunque può leggere"
+  on storage.objects for select
+  using (bucket_id = 'event-media');
 ```
 
-5. Vai su **Project Settings → API** e copia:
-   - `Project URL`
-   - `anon public` key
+### 4. Copia le credenziali
+**Project Settings → API** → copia `Project URL` e `anon public key`.
 
-### 2. Configura le variabili d'ambiente
-
+### 5. Crea il file .env
 ```bash
 cp .env.example .env
 ```
-
-Apri `.env` e incolla le tue credenziali:
-
+Incolla le credenziali:
 ```
 REACT_APP_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=eyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+REACT_APP_SUPABASE_ANON_KEY=eyJ...
 ```
 
-### 3. Installa e avvia in locale
+---
+
+## Avvio locale
 
 ```bash
 npm install
 npm start
 ```
 
-L'app gira su [http://localhost:3000](http://localhost:3000)
-
 ---
 
-## Deploy su Vercel (gratuito)
+## Deploy su Vercel
 
-### Prima volta
-
-1. Carica il progetto su GitHub (senza il file `.env`!)
+1. Carica il progetto su GitHub
 2. Vai su [vercel.com](https://vercel.com) → **Add New Project** → importa il repo
-3. Nella sezione **Environment Variables** aggiungi:
-   - `REACT_APP_SUPABASE_URL` → il tuo Project URL
-   - `REACT_APP_SUPABASE_ANON_KEY` → la tua anon key
+3. Aggiungi le variabili d'ambiente nel pannello Vercel:
+   - `REACT_APP_SUPABASE_URL`
+   - `REACT_APP_SUPABASE_ANON_KEY`
 4. Clicca **Deploy**
 
-Il sito sarà live su `https://il-tuo-progetto.vercel.app` in circa 2 minuti.
-
-### Aggiornamenti futuri
-
-```bash
-git add .
-git commit -m "aggiornamento"
-git push
-```
-
-Vercel rideploya automaticamente ad ogni push.
+Per aggiornamenti futuri: `git push` → Vercel rideploya automaticamente.
 
 ---
 
-## Struttura del progetto
+## Struttura progetto
 
 ```
 event-gallery/
-├── public/
-│   └── index.html
 ├── src/
-│   ├── App.js           # Componente principale + UI
-│   ├── api.js           # Tutte le chiamate a Supabase
-│   ├── supabaseClient.js# Inizializzazione client
-│   ├── utils.js         # Helper (colori, initials, timeAgo)
-│   └── index.js         # Entry point React
-├── .env.example         # Template variabili d'ambiente
+│   ├── config.js          ← PERSONALIZZA QUI (nome, colori, URL)
+│   ├── App.js             ← UI completa
+│   ├── api.js             ← upload multiplo, fetch, like
+│   ├── supabaseClient.js  ← inizializzazione Supabase
+│   ├── utils.js           ← helper
+│   └── index.js           ← entry point
+├── public/index.html
+├── capacitor.config.json  ← config app mobile
+├── android-config/        ← snippet per Android Studio
+├── .env.example
 ├── .gitignore
 └── package.json
 ```
 
+---
+
 ## Funzionalità
 
-- 📸 Upload foto e video drag & drop
-- ⚡ Aggiornamenti in tempo reale (Supabase Realtime)
+- 📸 Upload **multiplo** — fino a 10 foto/video in una volta, con anteprima griglia e progresso per file
+- ⚡ **Realtime** — le foto degli altri ospiti appaiono senza ricaricare
 - ❤️ Like sui post
-- 🔍 Lightbox per foto a schermo intero
+- 🔍 Lightbox foto a schermo intero
+- ⬛ **QR code** generato automaticamente — pulsante in alto a destra, con stampa in un click
+- 🎨 **Tema personalizzabile** — nome evento, colori, sottotitolo da `config.js`
 - ⊞ Vista griglia / feed
-- 👤 Avatar personalizzati per ogni ospite
+- 📱 Pronto per Android e iOS con Capacitor
