@@ -1,0 +1,31 @@
+{
+  "name": "event-gallery",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/camera": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "sync:android": "npm run build && npx cap sync android",
+    "sync:ios": "npm run build && npx cap sync ios",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios",
+    "deploy:android": "npm run build && npx cap sync android && npx cap open android",
+    "deploy:ios": "npm run build && npx cap sync ios && npx cap open ios"
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  }
+}
