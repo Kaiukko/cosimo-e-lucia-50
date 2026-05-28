@@ -655,7 +655,6 @@ export default function App() {
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rouge+Script:ital@0;1&family=DM+Mono:wght@400;500&display=swap');
-       // ─── @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap'); ─────────────────────────────────────────────────────────────────
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
         body { background:${C.background}; }
         @keyframes shake {
