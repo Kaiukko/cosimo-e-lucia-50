@@ -25,7 +25,7 @@ const config = {
     background: "#0d0d0d",
     card:       "#111111",
     text:       "#f5f0e8",
-    textMuted:  "#f8dc27",
+    textMuted:  "#e51635",
   },
 
   // Numero massimo di file selezionabili in una volta
