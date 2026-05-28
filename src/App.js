@@ -316,7 +316,7 @@ function NameScreen({ onEnter }) {
 
 // ─── Multi-file Upload Panel ──────────────────────────────────────────────────
 
-function UploadPanel({ guestName, initials, onPublished }) {
+function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }) {
   const [files, setFiles]         = useState([]);
   const [caption, setCaption]     = useState("");
   const [uploading, setUploading] = useState(false);
@@ -473,6 +473,11 @@ function UploadPanel({ guestName, initials, onPublished }) {
           ? `⟳ Pubblicazione ${doneCount}/${files.length}...`
           : files.length > 1 ? `✦ Pubblica ${files.length} foto` : "✦ Pubblica nella galleria"}
       </button>
+      {hasPosts && (
+        <button style={s.slideshowBtn} onClick={onSlideshow}>
+          ▶ Guarda la presentazione
+        </button>
+      )}
     </div>
   );
 }
@@ -749,15 +754,7 @@ export default function App() {
             <button style={{ ...s.iconBtn, color:C.accent }} onClick={() => setShowQR(true)} title="QR Code">
               ⬛
             </button>
-            {posts.length > 0 && (
-              <button
-                style={{ ...s.slideshowBtn, background: C.accent }}
-                onClick={() => setShowSlideshow(true)}
-                title="Presentazione"
-              >
-                ▶ Presentazione
-              </button>
-            )}
+
             <div style={{ ...s.avatar, background:getAvatarColor(initials) }} title={guestName}>
               {initials}
             </div>
@@ -769,7 +766,7 @@ export default function App() {
         </div>
       </header>
 
-      <UploadPanel guestName={guestName} initials={initials} onPublished={handlePublished} />
+      <UploadPanel guestName={guestName} initials={initials} onPublished={handlePublished} hasPosts={posts.length > 0} onSlideshow={() => setShowSlideshow(true)} />
 
       {/* Gallery */}
       <div ref={galleryRef} style={view==="grid" ? s.grid : s.feed}>
@@ -860,7 +857,7 @@ const s = {
   headerTitle:  { fontFamily:"'Instrument Serif',serif", fontSize:28, fontWeight:400 },
   headerRight:  { display:"flex", alignItems:"center", gap:10 },
   iconBtn:      { background:"none", border:"none", fontSize:18, cursor:"pointer", padding:"4px 6px", borderRadius:6 },
-  slideshowBtn: { border:"none", borderRadius:20, padding:"7px 14px", fontSize:11, fontFamily:"'DM Mono',monospace", fontWeight:700, cursor:"pointer", color:"#0d0d0d", letterSpacing:.5, whiteSpace:"nowrap" },
+  slideshowBtn: { width:"100%", marginTop:10, border:`1px solid ${C.accent}`, borderRadius:12, padding:"13px", fontSize:13, fontFamily:"'DM Mono',monospace", fontWeight:600, cursor:"pointer", color:C.accent, background:"transparent", letterSpacing:.5, display:"block" },
   avatar:       { width:34, height:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:11, color:"#fff", flexShrink:0 },
   viewToggle:   { display:"flex", border:"1px solid #252525", borderRadius:8, overflow:"hidden" },
   toggleBtn:    { background:"transparent", border:"none", color:"#444", padding:"6px 10px", cursor:"pointer", fontSize:14 },
