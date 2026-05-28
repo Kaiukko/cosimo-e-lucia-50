@@ -34,7 +34,7 @@ function AdminLogin({ onSuccess, onClose }) {
           <div>
             <div style={{ ...s.badge, color: C.accent }}>AREA RISERVATA</div>
             <div style={{ fontFamily:"'Instrument Serif',serif", fontSize:22, color:C.text, marginTop:4 }}>
-              Accesso amministratore
+              Accesso Amministratore
             </div>
           </div>
           <button style={s.modalClose} onClick={onClose}>✕</button>
@@ -124,7 +124,7 @@ function AdminPanel({ posts, onDelete, onClose }) {
           <div>
             <div style={{ ...s.badge, color:"#e06060" }}>PANNELLO ADMIN</div>
             <div style={{ fontFamily:"'Instrument Serif',serif", fontSize:22, color:C.text, marginTop:4 }}>
-              Gestisci galleria
+              Gestisci Galleria
             </div>
           </div>
           <button style={s.modalClose} onClick={onClose}>✕</button>
@@ -674,7 +674,7 @@ export default function App() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = {
-  nameScreen:   { minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'DM Mono',monospace", position:"relative", overflow:"hidden" },
+  nameScreen:   { minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Dancing Script',latin", position:"relative", overflow:"hidden" },
   nameCard:     { border:"1px solid #252525", borderRadius:20, padding:"52px 44px", maxWidth:420, width:"90%", textAlign:"center", zIndex:1, animation:"fadeUp .6s ease both" },
   badge:        { fontSize:10, letterSpacing:4, marginBottom:12 },
   nameTitle:    { fontFamily:"'Instrument Serif',serif", fontSize:46, marginBottom:8, fontWeight:400 },
