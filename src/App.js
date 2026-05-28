@@ -683,10 +683,10 @@ const s = {
   postBtn:      { width:"100%", border:"none", borderRadius:12, padding:14, fontSize:13, fontFamily:"'DM Mono',monospace", fontWeight:700, cursor:"pointer", letterSpacing:1, color:"#0d0d0d", display:"block" },
   bgDots:       { position:"absolute", inset:0, backgroundImage:"radial-gradient(#1e1e1e 1px,transparent 1px)", backgroundSize:"28px 28px" },
 
-  app:          { minHeight:"100vh", fontFamily:"'DM Mono',monospace", paddingBottom:80 },
+  app:          { minHeight:"100vh", fontFamily:"'Dancing Script',latin", paddingBottom:80 },
   header:       { borderBottom:"1px solid #181818", position:"sticky", top:0, zIndex:100, backdropFilter:"blur(14px)" },
   headerInner:  { maxWidth:960, margin:"0 auto", padding:"14px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" },
-  headerTitle:  { fontFamily:"'Instrument Serif',serif", fontSize:24, fontWeight:400 },
+  headerTitle:  { fontFamily:"'Dancing Script',latin", fontSize:24, fontWeight:400 },
   headerRight:  { display:"flex", alignItems:"center", gap:10 },
   iconBtn:      { background:"none", border:"none", fontSize:18, cursor:"pointer", padding:"4px 6px", borderRadius:6 },
   avatar:       { width:34, height:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:11, color:"#fff", flexShrink:0 },
