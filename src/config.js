@@ -5,7 +5,7 @@
 
 const config = {
   // Nome dell'evento (mostrato nell'header e nel QR code)
-  eventName: "Nozze d'oro Cosimo & Lucia",
+  eventName: "Le Nozze d'oro di Cosimo & Lucia",
 
   // Sottotitolo (opzionale, lascia "" per nasconderlo)
   eventSubtitle: "07 Giugno 2026",
