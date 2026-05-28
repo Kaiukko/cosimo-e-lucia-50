@@ -677,7 +677,7 @@ const s = {
   nameScreen:   { minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Dancing Script',latin", position:"relative", overflow:"hidden" },
   nameCard:     { border:"1px solid #252525", borderRadius:20, padding:"52px 44px", maxWidth:420, width:"90%", textAlign:"center", zIndex:1, animation:"fadeUp .6s ease both" },
   badge:        { fontSize:10, letterSpacing:4, marginBottom:12 },
-  nameTitle:    { fontFamily:"'Instrument Serif',serif", fontSize:46, marginBottom:8, fontWeight:400 },
+  nameTitle:    { fontFamily:"'Dancing Script',latin", fontSize:46, marginBottom:8, fontWeight:400 },
   nameSub:      { fontSize:14, lineHeight:1.65, marginBottom:28 },
   nameInput:    { width:"100%", border:"1px solid #2a2a2a", borderRadius:10, padding:"14px 18px", fontSize:16, fontFamily:"'DM Mono',monospace", outline:"none", marginBottom:16 },
   postBtn:      { width:"100%", border:"none", borderRadius:12, padding:14, fontSize:13, fontFamily:"'DM Mono',monospace", fontWeight:700, cursor:"pointer", letterSpacing:1, color:"#0d0d0d", display:"block" },
