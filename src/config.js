@@ -11,25 +11,21 @@ const config = {
   eventSubtitle: "07 Giugno 2026",
 
   // URL pubblico della tua app su Vercel (usato per generare il QR code)
-  // Es: "https://cosimo-e-lucia-50.vercel.app"
   appUrl: "https://cosimo-e-lucia-50.vercel.app",
+
+  // ── ADMIN ──────────────────────────────────────────────────────────────────
+  // Password per accedere al pannello di amministrazione.
+  // Cambiala con qualcosa di sicuro prima del deploy!
+  // In produzione puoi anche spostarla in .env come REACT_APP_ADMIN_PASSWORD
+  adminPassword: process.env.REACT_APP_ADMIN_PASSWORD || "cambiami123",
 
   // Colori del tema
   colors: {
-    // Colore principale (bottoni, accenti, badge)
-    accent: "#f0c040",        // oro — cambia con es. "#e07090" per rosa
-
-    // Sfondo app
-    background: "#0d0d0d",   // quasi nero
-
-    // Sfondo card
-    card: "#111111",
-
-    // Testo principale
-    text: "#f5f0e8",          // bianco caldo
-
-    // Testo secondario
-    textMuted: "#666666",
+    accent:     "#f0c040",   // oro — cambia con es. "#e07090" per rosa
+    background: "#0d0d0d",
+    card:       "#111111",
+    text:       "#f5f0e8",
+    textMuted:  "#666666",
   },
 
   // Numero massimo di file selezionabili in una volta

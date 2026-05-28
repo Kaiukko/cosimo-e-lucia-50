@@ -12,32 +12,35 @@ Apri **`src/config.js`** e modifica:
 
 ```js
 eventName:     "Cosimo & Lucia",      // nome mostrato ovunque
-eventSubtitle: "14 Giugno 2025",      // data o sottotitolo (lascia "" per nasconderlo)
+eventSubtitle: "14 Giugno 2025",      // data o sottotitolo
 appUrl:        "https://...",         // URL Vercel — usato per il QR code
 
+adminPassword: "cambiami123",         // ← CAMBIA QUESTA prima del deploy!
+
 colors: {
-  accent:     "#f0c040",   // colore bottoni e accenti (oro di default)
+  accent:     "#f0c040",   // colore bottoni e accenti
   background: "#0d0d0d",   // sfondo app
   card:       "#111111",   // sfondo card
   text:       "#f5f0e8",   // testo principale
   textMuted:  "#666666",   // testo secondario
 },
 
-maxFilesPerUpload: 10,   // quante foto si possono caricare in una volta
-maxFileSizeMB:     50,   // limite per singolo file
+maxFilesPerUpload: 10,
+maxFileSizeMB:     50,
 ```
+
+> **Consiglio sicurezza:** in produzione aggiungi la password come variabile d'ambiente su Vercel:
+> `REACT_APP_ADMIN_PASSWORD=latuapassword`
+> Il codice la legge automaticamente da lì.
 
 ---
 
 ## Setup Supabase
 
-### 1. Crea il progetto
-Vai su [supabase.com](https://supabase.com), crea un account e un nuovo progetto.
-
-### 2. Crea il bucket Storage
+### 1. Crea progetto e bucket
 **Storage → New bucket** → nome: `event-media` → **Public: ON**
 
-### 3. Esegui questo SQL (SQL Editor)
+### 2. SQL Editor — esegui tutto questo
 
 ```sql
 -- Tabella post
@@ -52,6 +55,7 @@ alter table posts enable row level security;
 create policy "read"   on posts for select using (true);
 create policy "insert" on posts for insert with check (true);
 create policy "update" on posts for update using (true);
+create policy "delete" on posts for delete using (true);
 
 -- Policy Storage
 create policy "Chiunque può caricare"
@@ -61,19 +65,22 @@ create policy "Chiunque può caricare"
 create policy "Chiunque può leggere"
   on storage.objects for select
   using (bucket_id = 'event-media');
+
+create policy "Chiunque può eliminare"
+  on storage.objects for delete
+  using (bucket_id = 'event-media');
 ```
 
-### 4. Copia le credenziali
-**Project Settings → API** → copia `Project URL` e `anon public key`.
+### 3. Crea il file .env
 
-### 5. Crea il file .env
 ```bash
 cp .env.example .env
 ```
-Incolla le credenziali:
+
 ```
 REACT_APP_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=eyJ...
+REACT_APP_ADMIN_PASSWORD=latuapasswordsicura
 ```
 
 ---
@@ -89,14 +96,12 @@ npm start
 
 ## Deploy su Vercel
 
-1. Carica il progetto su GitHub
-2. Vai su [vercel.com](https://vercel.com) → **Add New Project** → importa il repo
-3. Aggiungi le variabili d'ambiente nel pannello Vercel:
-   - `REACT_APP_SUPABASE_URL`
-   - `REACT_APP_SUPABASE_ANON_KEY`
-4. Clicca **Deploy**
+1. Carica su GitHub
+2. Importa su [vercel.com](https://vercel.com)
+3. Aggiungi le 3 variabili d'ambiente nel pannello Vercel
+4. Deploy
 
-Per aggiornamenti futuri: `git push` → Vercel rideploya automaticamente.
+Per aggiornamenti: `git push` → Vercel rideploya automaticamente.
 
 ---
 
@@ -105,15 +110,15 @@ Per aggiornamenti futuri: `git push` → Vercel rideploya automaticamente.
 ```
 event-gallery/
 ├── src/
-│   ├── config.js          ← PERSONALIZZA QUI (nome, colori, URL)
-│   ├── App.js             ← UI completa
-│   ├── api.js             ← upload multiplo, fetch, like
-│   ├── supabaseClient.js  ← inizializzazione Supabase
-│   ├── utils.js           ← helper
-│   └── index.js           ← entry point
+│   ├── config.js          ← PERSONALIZZA QUI
+│   ├── App.js             ← UI completa (galleria + admin)
+│   ├── api.js             ← upload, fetch, like, delete
+│   ├── supabaseClient.js
+│   ├── utils.js
+│   └── index.js
 ├── public/index.html
-├── capacitor.config.json  ← config app mobile
-├── android-config/        ← snippet per Android Studio
+├── capacitor.config.json
+├── android-config/
 ├── .env.example
 ├── .gitignore
 └── package.json
@@ -123,11 +128,12 @@ event-gallery/
 
 ## Funzionalità
 
-- 📸 Upload **multiplo** — fino a 10 foto/video in una volta, con anteprima griglia e progresso per file
-- ⚡ **Realtime** — le foto degli altri ospiti appaiono senza ricaricare
+- 📸 Upload **multiplo** — fino a 10 foto/video, con anteprima e progresso per file
+- ⚡ **Realtime** — foto degli altri ospiti appaiono in tempo reale
 - ❤️ Like sui post
 - 🔍 Lightbox foto a schermo intero
-- ⬛ **QR code** generato automaticamente — pulsante in alto a destra, con stampa in un click
-- 🎨 **Tema personalizzabile** — nome evento, colori, sottotitolo da `config.js`
+- ⬛ **QR code** con stampa in un click
+- 🎨 **Tema personalizzabile** da `config.js`
+- ⚙ **Pannello admin** protetto da password per eliminare foto e video
 - ⊞ Vista griglia / feed
 - 📱 Pronto per Android e iOS con Capacitor
