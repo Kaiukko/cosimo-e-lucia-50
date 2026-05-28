@@ -33,8 +33,8 @@ function AdminLogin({ onSuccess, onClose }) {
         <div style={s.modalHeader}>
           <div>
             <div style={{ ...s.badge, color: C.accent }}>AREA RISERVATA</div>
-            <div style={{ fontFamily:"'Instrument Serif',serif", fontSize:22, color:C.text, marginTop:4 }}>
-              Accesso Amministratore
+            <div style={{ fontFamily:"'Rouge Script',serif", fontSize:22, color:C.text, marginTop:4 }}>
+              Accesso amministratore
             </div>
           </div>
           <button style={s.modalClose} onClick={onClose}>✕</button>
@@ -123,8 +123,8 @@ function AdminPanel({ posts, onDelete, onClose }) {
         <div style={s.adminHeader}>
           <div>
             <div style={{ ...s.badge, color:"#e06060" }}>PANNELLO ADMIN</div>
-            <div style={{ fontFamily:"'Instrument Serif',serif", fontSize:22, color:C.text, marginTop:4 }}>
-              Gestisci Galleria
+            <div style={{ fontFamily:"'Rouge Script',serif", fontSize:22, color:C.text, marginTop:4 }}>
+              Gestisci galleria
             </div>
           </div>
           <button style={s.modalClose} onClick={onClose}>✕</button>
@@ -228,12 +228,12 @@ function QRModal({ onClose }) {
         <meta charset="utf-8"/>
         <title>QR — ${config.eventName}</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Rouge+Script&family=DM+Mono:wght@400;500&display=swap');
           *{box-sizing:border-box;margin:0;padding:0}
           body{background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'DM Mono',monospace}
           .card{border:2px solid #111;border-radius:24px;padding:48px 56px;text-align:center;max-width:420px;width:90%}
           .badge{font-size:10px;letter-spacing:4px;color:#999;margin-bottom:16px}
-          .title{font-family:'Instrument Serif',serif;font-size:40px;font-weight:400;color:#111;margin-bottom:6px}
+          .title{font-family:'Rouge Script',serif;font-size:40px;font-weight:400;color:#111;margin-bottom:6px}
           .sub{font-size:13px;color:#888;margin-bottom:32px}
           .qr{width:220px;height:220px;border-radius:12px}
           .cta{margin-top:28px;font-size:12px;color:#555;line-height:1.7}
@@ -260,7 +260,7 @@ function QRModal({ onClose }) {
         <div style={s.modalHeader}>
           <div>
             <div style={{ ...s.badge, color: C.accent, marginBottom:4 }}>QR CODE</div>
-            <div style={{ fontFamily:"'Instrument Serif',serif", fontSize:22, color:C.text }}>
+            <div style={{ fontFamily:"'Rouge Script',serif", fontSize:22, color:C.text }}>
               {config.eventName}
             </div>
           </div>
@@ -654,7 +654,7 @@ export default function App() {
       )}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Rouge+Script:ital@0;1&family=DM+Mono:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Rouge+Script&family=DM+Mono:wght@400;500&display=swap');
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
         body { background:${C.background}; }
         @keyframes shake {
@@ -674,19 +674,19 @@ export default function App() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = {
-  nameScreen:   { minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'Dancing Script',latin", position:"relative", overflow:"hidden" },
+  nameScreen:   { minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'DM Mono',monospace", position:"relative", overflow:"hidden" },
   nameCard:     { border:"1px solid #252525", borderRadius:20, padding:"52px 44px", maxWidth:420, width:"90%", textAlign:"center", zIndex:1, animation:"fadeUp .6s ease both" },
   badge:        { fontSize:10, letterSpacing:4, marginBottom:12 },
-  nameTitle:    { fontFamily:"'Rouge Script',cursive", fontSize:46, marginBottom:8, fontWeight:400 },
+  nameTitle:    { fontFamily:"'Rouge Script',serif", fontSize:62, marginBottom:8, fontWeight:400 },
   nameSub:      { fontSize:14, lineHeight:1.65, marginBottom:28 },
   nameInput:    { width:"100%", border:"1px solid #2a2a2a", borderRadius:10, padding:"14px 18px", fontSize:16, fontFamily:"'DM Mono',monospace", outline:"none", marginBottom:16 },
   postBtn:      { width:"100%", border:"none", borderRadius:12, padding:14, fontSize:13, fontFamily:"'DM Mono',monospace", fontWeight:700, cursor:"pointer", letterSpacing:1, color:"#0d0d0d", display:"block" },
   bgDots:       { position:"absolute", inset:0, backgroundImage:"radial-gradient(#1e1e1e 1px,transparent 1px)", backgroundSize:"28px 28px" },
 
-  app:          { minHeight:"100vh", fontFamily:"'Dancing Script',latin", paddingBottom:80 },
+  app:          { minHeight:"100vh", fontFamily:"'DM Mono',monospace", paddingBottom:80 },
   header:       { borderBottom:"1px solid #181818", position:"sticky", top:0, zIndex:100, backdropFilter:"blur(14px)" },
   headerInner:  { maxWidth:960, margin:"0 auto", padding:"14px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" },
-  headerTitle:  { fontFamily:"'Rouge Script',cursive", fontSize:24, fontWeight:400 },
+  headerTitle:  { fontFamily:"'Rouge Script',serif", fontSize:32, fontWeight:400 },
   headerRight:  { display:"flex", alignItems:"center", gap:10 },
   iconBtn:      { background:"none", border:"none", fontSize:18, cursor:"pointer", padding:"4px 6px", borderRadius:6 },
   avatar:       { width:34, height:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:11, color:"#fff", flexShrink:0 },
