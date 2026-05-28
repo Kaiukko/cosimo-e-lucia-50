@@ -509,6 +509,158 @@ function PostCard({ post, layout, onLike, onExpand }) {
   );
 }
 
+// ─── Slideshow ────────────────────────────────────────────────────────────────
+
+function Slideshow({ posts, startIndex = 0, onClose }) {
+  const [current, setCurrent]   = useState(startIndex);
+  const [paused, setPaused]     = useState(false);
+  const [progress, setProgress] = useState(0);
+  const timerRef  = useRef(null);
+  const progRef   = useRef(null);
+  const videoRef  = useRef(null);
+  const DURATION  = 4000; // ms per foto
+
+  const imagePosts = posts.filter(p => p.type === "image" || p.type === "video");
+  const total      = imagePosts.length;
+  const post       = imagePosts[current];
+
+  const goTo = useCallback((idx) => {
+    const next = (idx + total) % total;
+    setCurrent(next);
+    setProgress(0);
+  }, [total]);
+
+  const goNext = useCallback(() => goTo(current + 1), [current, goTo]);
+  const goPrev = useCallback(() => goTo(current - 1), [current, goTo]);
+
+  // Auto-advance timer (only for images)
+  useEffect(() => {
+    if (paused || post?.type === "video") return;
+    setProgress(0);
+    const start = Date.now();
+
+    progRef.current = setInterval(() => {
+      const elapsed = Date.now() - start;
+      setProgress(Math.min((elapsed / DURATION) * 100, 100));
+    }, 30);
+
+    timerRef.current = setTimeout(goNext, DURATION);
+
+    return () => {
+      clearTimeout(timerRef.current);
+      clearInterval(progRef.current);
+    };
+  }, [current, paused, goNext, post?.type]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft")  goPrev();
+      if (e.key === "Escape")     onClose();
+      if (e.key === " ")          setPaused(p => !p);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [goNext, goPrev, onClose]);
+
+  if (!post) return null;
+
+  return (
+    <div style={ss.overlay}>
+      {/* Progress bars */}
+      <div style={ss.progressRow}>
+        {imagePosts.map((_, i) => (
+          <div key={i} style={ss.progressTrack}>
+            <div style={{
+              ...ss.progressFill,
+              background: C.accent,
+              width: i < current ? "100%" : i === current ? `${progress}%` : "0%",
+              transition: i === current ? "none" : undefined,
+            }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Top bar */}
+      <div style={ss.topBar}>
+        <div style={ss.authorRow}>
+          <div style={{ ...ss.avatar, background: post.color }}>{post.avatar}</div>
+          <div>
+            <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>{post.author}</div>
+            <div style={{ color: "rgba(255,255,255,.5)", fontSize: 11 }}>{timeAgo(post.created_at)}</div>
+          </div>
+        </div>
+        <div style={ss.topActions}>
+          <button style={ss.iconBtn} onClick={() => setPaused(p => !p)} title={paused ? "Riprendi" : "Pausa"}>
+            {paused ? "▶" : "⏸"}
+          </button>
+          <button style={ss.iconBtn} onClick={onClose} title="Chiudi">✕</button>
+        </div>
+      </div>
+
+      {/* Media */}
+      <div style={ss.mediaWrap} onClick={goNext}>
+        {post.type === "video" ? (
+          <video
+            ref={videoRef}
+            key={post.id}
+            src={post.url}
+            style={ss.media}
+            autoPlay
+            playsInline
+            controls
+            onClick={e => e.stopPropagation()}
+            onEnded={goNext}
+          />
+        ) : (
+          <img
+            key={post.id}
+            src={post.url}
+            alt={post.caption || ""}
+            style={ss.media}
+          />
+        )}
+
+        {/* Left / Right tap zones */}
+        <div style={ss.zoneLeft}  onClick={e => { e.stopPropagation(); goPrev(); }} />
+        <div style={ss.zoneRight} onClick={e => { e.stopPropagation(); goNext(); }} />
+      </div>
+
+      {/* Caption */}
+      {post.caption && (
+        <div style={ss.caption}>{post.caption}</div>
+      )}
+
+      {/* Nav arrows */}
+      <button style={{ ...ss.navBtn, left: 16 }} onClick={goPrev}>‹</button>
+      <button style={{ ...ss.navBtn, right: 16 }} onClick={goNext}>›</button>
+
+      {/* Counter */}
+      <div style={ss.counter}>{current + 1} / {total}</div>
+    </div>
+  );
+}
+
+const ss = {
+  overlay:      { position:"fixed", inset:0, background:"#000", zIndex:2000, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" },
+  progressRow:  { position:"absolute", top:0, left:0, right:0, display:"flex", gap:3, padding:"12px 16px 0", zIndex:10 },
+  progressTrack:{ flex:1, height:2, background:"rgba(255,255,255,.2)", borderRadius:2, overflow:"hidden" },
+  progressFill: { height:"100%", borderRadius:2, transition:"width .03s linear" },
+  topBar:       { position:"absolute", top:20, left:0, right:0, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 16px", zIndex:10 },
+  authorRow:    { display:"flex", alignItems:"center", gap:10 },
+  avatar:       { width:34, height:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 },
+  topActions:   { display:"flex", gap:8 },
+  iconBtn:      { background:"rgba(0,0,0,.4)", border:"none", color:"#fff", borderRadius:"50%", width:36, height:36, fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)" },
+  mediaWrap:    { width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", position:"relative", cursor:"pointer" },
+  media:        { maxWidth:"100%", maxHeight:"100vh", objectFit:"contain", display:"block", userSelect:"none" },
+  zoneLeft:     { position:"absolute", left:0, top:0, width:"30%", height:"100%" },
+  zoneRight:    { position:"absolute", right:0, top:0, width:"30%", height:"100%" },
+  caption:      { position:"absolute", bottom:60, left:0, right:0, textAlign:"center", color:"rgba(255,255,255,.85)", fontSize:14, padding:"0 48px", lineHeight:1.5, textShadow:"0 1px 6px rgba(0,0,0,.8)", pointerEvents:"none" },
+  navBtn:       { position:"absolute", top:"50%", transform:"translateY(-50%)", background:"rgba(255,255,255,.1)", border:"none", color:"#fff", borderRadius:"50%", width:44, height:44, fontSize:26, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)", lineHeight:1 },
+  counter:      { position:"absolute", bottom:20, left:"50%", transform:"translateX(-50%)", color:"rgba(255,255,255,.4)", fontSize:11, fontFamily:"'DM Mono',monospace", letterSpacing:2 },
+};
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
@@ -520,6 +672,7 @@ export default function App() {
   const [showQR, setShowQR]         = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [showAdmin, setShowAdmin]   = useState(false);
+  const [showSlideshow, setShowSlideshow] = useState(false);
   const galleryRef = useRef();
 
   const initials = getInitials(guestName || "?");
@@ -596,6 +749,15 @@ export default function App() {
             <button style={{ ...s.iconBtn, color:C.accent }} onClick={() => setShowQR(true)} title="QR Code">
               ⬛
             </button>
+            {posts.length > 0 && (
+              <button
+                style={{ ...s.slideshowBtn, background: C.accent }}
+                onClick={() => setShowSlideshow(true)}
+                title="Presentazione"
+              >
+                ▶ Presentazione
+              </button>
+            )}
             <div style={{ ...s.avatar, background:getAvatarColor(initials) }} title={guestName}>
               {initials}
             </div>
@@ -631,6 +793,15 @@ export default function App() {
           <img src={lightbox} alt="" style={s.lightboxImg} onClick={e => e.stopPropagation()} />
           <button style={s.lightboxClose} onClick={() => setLightbox(null)}>✕</button>
         </div>
+      )}
+
+      {/* Slideshow */}
+      {showSlideshow && (
+        <Slideshow
+          posts={posts}
+          startIndex={0}
+          onClose={() => setShowSlideshow(false)}
+        />
       )}
 
       {/* QR Modal */}
@@ -689,6 +860,7 @@ const s = {
   headerTitle:  { fontFamily:"'Dancing Script',serif", fontSize:22, fontWeight:400 },
   headerRight:  { display:"flex", alignItems:"center", gap:10 },
   iconBtn:      { background:"none", border:"none", fontSize:18, cursor:"pointer", padding:"4px 6px", borderRadius:6 },
+  slideshowBtn: { border:"none", borderRadius:20, padding:"7px 14px", fontSize:11, fontFamily:"'DM Mono',monospace", fontWeight:700, cursor:"pointer", color:"#0d0d0d", letterSpacing:.5, whiteSpace:"nowrap" },
   avatar:       { width:34, height:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:11, color:"#fff", flexShrink:0 },
   viewToggle:   { display:"flex", border:"1px solid #252525", borderRadius:8, overflow:"hidden" },
   toggleBtn:    { background:"transparent", border:"none", color:"#444", padding:"6px 10px", cursor:"pointer", fontSize:14 },
