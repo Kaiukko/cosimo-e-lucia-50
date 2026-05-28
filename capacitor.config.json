@@ -1,6 +1,6 @@
 {
   "appId": "com.tuoevento.gallery",
-  "appName": "Galleria Evento",
+  "appName": "Galleria Ospiti",
   "webDir": "build",
   "bundledWebRuntime": false,
   "server": {
