@@ -12,9 +12,9 @@ const config = {
   // Palette avorio, oro antico e seppia — lusso raffinato
   colors: {
     // Sfondi
-    background:  "#faf7f2",   // avorio caldo
-    surface:     "#fff9f2",   // pergamena
-    card:        "#fffef9",   // bianco caldo
+    background:  "#f5efe3",   // crema
+    surface:     "#f8f2e6",   // crema chiara
+    card:        "#faf5eb",   // crema tenue
 
     // Testi
     text:        "#2c2416",   // seppia scuro
