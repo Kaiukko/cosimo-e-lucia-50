@@ -4,19 +4,40 @@ import { uploadFiles, savePosts, fetchPosts, updateLikes, deletePosts } from "./
 import { getAvatarColor, getInitials, timeAgo } from "./utils";
 import config from "./config";
 
-const C = config.colors;
+// ── Midnight-luxury palette ───────────────────────────────────────────────────
+const C = {
+  bg:          "#0e1117",   // notte profonda
+  bgCard:      "#141921",   // carta notturna
+  bgElevated:  "#1a2030",   // superficie elevata
+  bgModal:     "#111520",   // modale scura
 
-// ─── Ornamental divider SVG ───────────────────────────────────────────────────
-const Ornament = ({ size = 120 }) => (
-  <svg width={size} height="24" viewBox="0 0 120 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display:"block", margin:"0 auto" }}>
-    <line x1="0" y1="12" x2="46" y2="12" stroke={C.accentLight} strokeWidth="0.75"/>
-    <path d="M52 12 C54 8, 58 6, 60 12 C62 18, 66 16, 68 12" stroke={C.accent} strokeWidth="1" fill="none"/>
-    <circle cx="60" cy="12" r="2.5" fill={C.accent}/>
-    <circle cx="52" cy="12" r="1.2" fill={C.accentLight}/>
-    <circle cx="68" cy="12" r="1.2" fill={C.accentLight}/>
-    <line x1="74" y1="12" x2="120" y2="12" stroke={C.accentLight} strokeWidth="0.75"/>
-  </svg>
+  gold:        "#c9a84c",   // oro champagne
+  goldLight:   "#e0c87a",   // oro luminoso
+  goldPale:    "#c9a84c22", // oro trasparente
+
+  white:       "#f0ede8",   // bianco caldo
+  whiteMuted:  "#a8a49e",   // bianco attenuato
+  whiteFaint:  "#5a5650",   // bianco lieve
+
+  border:      "#c9a84c30", // bordo dorato tenue
+  borderStrong:"#c9a84c60", // bordo più visibile
+};
+
+// ── Decorative rule ────────────────────────────────────────────────────────────
+const Rule = ({ width = 200 }) => (
+  <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, margin:"16px auto" }}>
+    <div style={{ height:1, width:width/2-18, background:`linear-gradient(to right, transparent, ${C.gold})` }} />
+    <div style={{ fontSize:8, color:C.gold, letterSpacing:4 }}>✦</div>
+    <div style={{ height:1, width:width/2-18, background:`linear-gradient(to left, transparent, ${C.gold})` }} />
+  </div>
 );
+
+// ── Roman numeral helper ───────────────────────────────────────────────────────
+const toRoman = n => {
+  const v=[1000,900,500,400,100,90,50,40,10,9,5,4,1];
+  const s=["M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"];
+  return v.reduce((r,val,i)=>{ while(n>=val){r+=s[i];n-=val;} return r; },"");
+};
 
 // ─── Admin Login ──────────────────────────────────────────────────────────────
 function AdminLogin({ onSuccess, onClose }) {
@@ -34,21 +55,22 @@ function AdminLogin({ onSuccess, onClose }) {
 
   return (
     <div style={s.overlay} onClick={onClose}>
-      <div style={{ ...s.modalBox, ...(shake ? s.shake : {}) }} onClick={e => e.stopPropagation()}>
-        <div style={s.modalOrnamentTop}>✦</div>
-        <h3 style={s.modalTitle}>Area Riservata</h3>
-        <Ornament size={100} />
-        <p style={{ ...s.modalSub, marginTop:16 }}>Inserisci la password per gestire la galleria.</p>
+      <div style={{ ...s.modal, ...(shake ? { animation:"shake .5s ease" } : {}) }} onClick={e => e.stopPropagation()}>
+        <button style={s.closeX} onClick={onClose}>✕</button>
+        <div style={s.modalEyebrow}>AREA RISERVATA</div>
+        <h3 style={s.modalHeading}>Amministrazione</h3>
+        <Rule width={180} />
+        <p style={s.modalBody}>Inserisci la password per gestire la galleria.</p>
         <input
-          style={{ ...s.elegantInput, borderColor: error ? "#c04040" : C.border, marginTop:20 }}
+          style={{ ...s.lineInput, borderColor: error ? "#c06060" : C.border, marginTop:20 }}
           type="password" placeholder="Password..."
           value={pwd}
           onChange={e => { setPwd(e.target.value); setError(false); }}
           onKeyDown={e => e.key === "Enter" && handleSubmit()}
           autoFocus
         />
-        {error && <p style={s.errorText}>Password errata. Riprova.</p>}
-        <button style={{ ...s.goldBtn, marginTop:20 }} onClick={handleSubmit} disabled={!pwd}>
+        {error && <p style={{ fontSize:11, color:"#d07070", marginTop:8 }}>Password errata. Riprova.</p>}
+        <button style={{ ...s.goldBtn, marginTop:20, opacity: pwd ? 1 : 0.4 }} onClick={handleSubmit} disabled={!pwd}>
           Accedi
         </button>
         <button style={s.ghostBtn} onClick={onClose}>Annulla</button>
@@ -71,64 +93,70 @@ function AdminPanel({ posts, onDelete, onClose }) {
     try {
       await deletePosts(posts.filter(p => selected.has(p.id)));
       onDelete([...selected]);
-      setSelected(new Set());
-      setConfirm(false);
-    } catch (err) { console.error(err); }
+      setSelected(new Set()); setConfirm(false);
+    } catch(err){ console.error(err); }
     finally { setDeleting(false); }
   };
 
   return (
     <div style={s.overlay} onClick={onClose}>
-      <div style={{ ...s.adminPanel }} onClick={e => e.stopPropagation()}>
+      <div style={s.adminPanel} onClick={e => e.stopPropagation()}>
         <div style={s.adminHead}>
-          <div style={s.adminHeadText}>
-            <div style={s.badgeSmall}>PANNELLO ADMIN</div>
-            <h3 style={s.modalTitle}>Gestisci Galleria</h3>
+          <div>
+            <div style={s.eyebrow}>PANNELLO ADMIN</div>
+            <h3 style={s.modalHeading}>Gestisci Galleria</h3>
           </div>
-          <button style={s.closeBtn} onClick={onClose}>✕</button>
+          <button style={s.closeX} onClick={onClose}>✕</button>
         </div>
-        <Ornament />
+        <Rule />
         <div style={s.adminToolbar}>
-          <button style={s.softBtn} onClick={toggleAll}>
+          <button style={s.pillBtn} onClick={toggleAll}>
             {selected.size === posts.length ? "Deseleziona tutto" : "Seleziona tutto"}
           </button>
-          <span style={s.countLabel}>{selected.size > 0 ? `${selected.size} selezionati` : `${posts.length} elementi`}</span>
+          <span style={{ fontSize:11, color:C.whiteMuted, fontStyle:"italic" }}>
+            {selected.size > 0 ? `${selected.size} selezionati` : `${posts.length} elementi`}
+          </span>
           {selected.size > 0 && !confirm && (
-            <button style={s.redBtn} onClick={() => setConfirm(true)}>🗑 Elimina {selected.size}</button>
+            <button style={s.redPillBtn} onClick={() => setConfirm(true)}>Elimina {selected.size}</button>
           )}
           {confirm && (
-            <div style={s.confirmRow}>
-              <span style={{ color:"#c04040", fontSize:12 }}>Confermi?</span>
-              <button style={{ ...s.redBtn, opacity: deleting ? .6 : 1 }} onClick={handleDelete} disabled={deleting}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+              <span style={{ fontSize:11, color:"#d07070" }}>Confermi?</span>
+              <button style={s.redPillBtn} onClick={handleDelete} disabled={deleting}>
                 {deleting ? "⟳ Eliminazione..." : "Sì, elimina"}
               </button>
-              <button style={s.softBtn} onClick={() => setConfirm(false)}>Annulla</button>
+              <button style={s.pillBtn} onClick={() => setConfirm(false)}>Annulla</button>
             </div>
           )}
         </div>
-        {posts.length === 0
-          ? <p style={{ textAlign:"center", color:C.textMuted, padding:"40px 0" }}>Nessun contenuto.</p>
-          : (
-            <div style={s.adminGrid}>
-              {posts.map(post => {
-                const sel = selected.has(post.id);
-                return (
-                  <div key={post.id} style={{ ...s.adminThumb, outline: sel ? `2px solid ${C.accent}` : "2px solid transparent" }} onClick={() => toggle(post.id)}>
-                    {post.type === "video"
-                      ? <video src={post.url} style={s.adminMedia} />
-                      : <img src={post.url} alt="" style={s.adminMedia} loading="lazy" />}
-                    <div style={{ ...s.adminCheck, background: sel ? C.accent : "rgba(250,247,242,.5)", borderColor: sel ? C.accent : C.border }}>
-                      {sel && <span style={{ fontSize:9, color:"#fff" }}>✓</span>}
-                    </div>
-                    <div style={s.adminLabel}>
-                      <span style={{ fontSize:9, color:"#fff", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{post.author}</span>
-                    </div>
-                    {post.type === "video" && <div style={s.videoBadge}>▶</div>}
+        {posts.length === 0 ? (
+          <div style={{ textAlign:"center", color:C.whiteMuted, padding:"40px 0", fontSize:13, fontStyle:"italic" }}>Galleria vuota.</div>
+        ) : (
+          <div style={s.adminGrid}>
+            {posts.map(post => {
+              const sel = selected.has(post.id);
+              return (
+                <div key={post.id}
+                  style={{ ...s.adminThumb, outline: sel ? `2px solid ${C.gold}` : "2px solid transparent" }}
+                  onClick={() => toggle(post.id)}
+                >
+                  {post.type === "video"
+                    ? <video src={post.url} style={s.adminMedia} />
+                    : <img src={post.url} alt="" style={s.adminMedia} loading="lazy" />
+                  }
+                  <div style={{ ...s.adminCheck, background: sel ? C.gold : "rgba(0,0,0,.5)", borderColor: sel ? C.gold : C.whiteFaint }}>
+                    {sel && <span style={{ fontSize:9, color:"#111" }}>✓</span>}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div style={s.adminLabel}>
+                    <div style={{ ...s.adminAvatar, background: post.color }}>{post.avatar}</div>
+                    <span style={{ fontSize:9, color:"#ddd", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{post.author}</span>
+                  </div>
+                  {post.type === "video" && <div style={s.videoBadge}>▶</div>}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -136,8 +164,8 @@ function AdminPanel({ posts, onDelete, onClose }) {
 
 // ─── QR Modal ─────────────────────────────────────────────────────────────────
 function QRModal({ onClose }) {
-  const url   = config.appUrl;
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&bgcolor=faf7f2&color=2c2416&data=${encodeURIComponent(url)}`;
+  const url    = config.appUrl;
+  const qrSrc  = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&bgcolor=0e1117&color=c9a84c&data=${encodeURIComponent(url)}`;
 
   const handlePrint = () => {
     const win = window.open("", "_blank");
@@ -145,28 +173,30 @@ function QRModal({ onClose }) {
       <meta charset="utf-8"/>
       <title>QR — ${config.eventName}</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=EB+Garamond:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Jost:wght@300;400&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        body{background:#faf7f2;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'EB Garamond',serif}
-        .card{border:1px solid #d4af70;border-radius:4px;padding:52px 60px;text-align:center;max-width:440px;width:90%;position:relative}
-        .card::before{content:'';position:absolute;inset:6px;border:0.5px solid #e8dfc8;border-radius:2px;pointer-events:none}
-        .badge{font-size:9px;letter-spacing:5px;color:#b8965a;margin-bottom:14px;text-transform:uppercase}
-        .title{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:300;color:#2c2416;margin-bottom:4px;font-style:italic}
-        .sub{font-size:12px;color:#9a8a6a;margin-bottom:6px;letter-spacing:1px}
-        .date{font-size:11px;color:#c4b08a;margin-bottom:32px;letter-spacing:1px}
-        .qr{width:200px;height:200px;border-radius:2px;border:1px solid #e8dfc8;padding:8px;background:#fff}
-        .cta{margin-top:24px;font-size:12px;color:#9a8a6a;line-height:1.8;font-style:italic}
-        .url{font-size:9px;color:#c4b08a;margin-top:10px;word-break:break-all;letter-spacing:.5px}
-        .divider{margin:20px auto;opacity:.6}
+        body{background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Jost',sans-serif}
+        .wrap{border:1px solid #c9a84c;border-radius:4px;padding:52px 60px;text-align:center;max-width:440px;width:90%;position:relative}
+        .wrap::before{content:"";position:absolute;inset:6px;border:1px solid #e0c87a40;border-radius:2px;pointer-events:none}
+        .eyebrow{font-size:9px;letter-spacing:4px;color:#a08040;text-transform:uppercase;margin-bottom:20px}
+        .title{font-family:'Playfair Display',serif;font-size:36px;font-weight:400;color:#1a1008;margin-bottom:4px;font-style:italic}
+        .sub{font-size:11px;color:#a08040;letter-spacing:2px;margin-bottom:28px;text-transform:uppercase}
+        .qr{width:200px;height:200px;border-radius:4px}
+        .rule{display:flex;align-items:center;gap:10;margin:20px auto;max-width:200px}
+        .rule-line{height:1px;flex:1;background:linear-gradient(to right,transparent,#c9a84c)}
+        .rule-line.r{background:linear-gradient(to left,transparent,#c9a84c)}
+        .dot{font-size:8px;color:#c9a84c;letter-spacing:4px}
+        .cta{margin-top:20px;font-size:12px;color:#666;line-height:1.8}
+        .url{font-size:10px;color:#bbb;margin-top:10px;word-break:break-all}
       </style>
     </head><body>
-      <div class="card">
-        <div class="badge">✦ Galleria Ospiti ✦</div>
+      <div class="wrap">
+        <div class="eyebrow">Galleria degli Ospiti</div>
         <div class="title">${config.eventName}</div>
         <div class="sub">${config.eventSubtitle || ""}</div>
-        <div class="date">${config.eventDate || ""}</div>
-        <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&bgcolor=ffffff&color=2c2416&data=${encodeURIComponent(url)}" />
-        <div class="cta">Inquadra il codice con la fotocamera<br>e condividi i tuoi ricordi più belli</div>
+        <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&bgcolor=ffffff&color=1a1008&data=${encodeURIComponent(url)}" />
+        <div class="rule"><div class="rule-line"></div><div class="dot">✦</div><div class="rule-line r"></div></div>
+        <div class="cta">Inquadra il codice con la fotocamera<br>e condividi i tuoi ricordi</div>
         <div class="url">${url}</div>
       </div>
     </body></html>`);
@@ -176,71 +206,153 @@ function QRModal({ onClose }) {
 
   return (
     <div style={s.overlay} onClick={onClose}>
-      <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-        <div style={s.modalOrnamentTop}>✦</div>
-        <h3 style={s.modalTitle}>QR Code Invitati</h3>
-        <Ornament size={100} />
-        <div style={s.qrWrap}>
-          <img src={qrSrc} alt="QR" style={s.qrImg} />
+      <div style={s.modal} onClick={e => e.stopPropagation()}>
+        <button style={s.closeX} onClick={onClose}>✕</button>
+        <div style={s.eyebrow}>QR CODE</div>
+        <h3 style={s.modalHeading}>{config.eventName}</h3>
+        <Rule width={180} />
+        <div style={{ background:"#0a0d13", borderRadius:4, padding:20, display:"inline-flex", margin:"8px 0 12px", border:`1px solid ${C.border}` }}>
+          <img src={qrSrc} alt="QR Code" style={{ width:180, height:180, display:"block", borderRadius:2 }} />
         </div>
-        <p style={s.qrUrl}>{url}</p>
-        <p style={{ ...s.modalSub, fontStyle:"italic", marginBottom:20 }}>
-          Gli ospiti inquadrano il codice per accedere alla galleria e condividere i loro ricordi.
+        <p style={{ fontSize:10, color:C.whiteFaint, marginBottom:6, wordBreak:"break-all", letterSpacing:.5 }}>{url}</p>
+        <p style={{ fontSize:12, color:C.whiteMuted, lineHeight:1.7, marginBottom:20 }}>
+          Gli ospiti inquadrano il codice e accedono alla galleria.
         </p>
-        <button style={s.goldBtn} onClick={handlePrint}>🖨 Stampa invito</button>
-        <button style={s.ghostBtn} onClick={onClose}>Chiudi</button>
+        <button style={s.goldBtn} onClick={handlePrint}>Stampa invito con QR</button>
       </div>
     </div>
   );
 }
 
+// ─── Slideshow ────────────────────────────────────────────────────────────────
+function Slideshow({ posts, onClose }) {
+  const [current, setCurrent]   = useState(0);
+  const [paused, setPaused]     = useState(false);
+  const [progress, setProgress] = useState(0);
+  const timerRef = useRef(null);
+  const progRef  = useRef(null);
+  const DURATION = 4000;
+
+  const items = posts.filter(p => p.type === "image" || p.type === "video");
+  const total = items.length;
+  const post  = items[current];
+
+  const goTo = useCallback(idx => { setCurrent((idx+total)%total); setProgress(0); }, [total]);
+  const goNext = useCallback(() => goTo(current+1), [current, goTo]);
+  const goPrev = useCallback(() => goTo(current-1), [current, goTo]);
+
+  useEffect(() => {
+    if (paused || post?.type==="video") return;
+    setProgress(0);
+    const start = Date.now();
+    progRef.current = setInterval(() => setProgress(Math.min((Date.now()-start)/DURATION*100,100)), 30);
+    timerRef.current = setTimeout(goNext, DURATION);
+    return () => { clearTimeout(timerRef.current); clearInterval(progRef.current); };
+  }, [current, paused, goNext, post?.type]);
+
+  useEffect(() => {
+    const h = e => {
+      if (e.key==="ArrowRight") goNext();
+      if (e.key==="ArrowLeft")  goPrev();
+      if (e.key==="Escape")     onClose();
+      if (e.key===" ")          setPaused(p=>!p);
+    };
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [goNext, goPrev, onClose]);
+
+  if (!post) return null;
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"#050709", zIndex:2000, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+      {/* Progress bars */}
+      <div style={{ position:"absolute", top:0, left:0, right:0, display:"flex", gap:3, padding:"14px 18px 0", zIndex:10 }}>
+        {items.map((_, i) => (
+          <div key={i} style={{ flex:1, height:1.5, background:"rgba(201,168,76,.2)", borderRadius:2, overflow:"hidden" }}>
+            <div style={{ height:"100%", borderRadius:2, background:C.gold, width: i<current?"100%":i===current?`${progress}%`:"0%", transition:i===current?"none":undefined }} />
+          </div>
+        ))}
+      </div>
+      {/* Top bar */}
+      <div style={{ position:"absolute", top:22, left:0, right:0, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 18px", zIndex:10 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ ...ss.avatar, background:post.color }}>{post.avatar}</div>
+          <div>
+            <div style={{ color:C.white, fontSize:13, fontFamily:"'Jost',sans-serif", letterSpacing:.5 }}>{post.author}</div>
+            <div style={{ color:C.whiteFaint, fontSize:10, fontFamily:"'Jost',sans-serif" }}>{timeAgo(post.created_at)}</div>
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:8 }}>
+          <button style={ss.ctrl} onClick={() => setPaused(p=>!p)}>{paused?"▶":"⏸"}</button>
+          <button style={ss.ctrl} onClick={onClose}>✕</button>
+        </div>
+      </div>
+      {/* Media */}
+      <div style={{ width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", position:"relative" }} onClick={goNext}>
+        {post.type === "video"
+          ? <video key={post.id} src={post.url} style={ss.media} autoPlay playsInline controls onClick={e=>e.stopPropagation()} onEnded={goNext} />
+          : <img key={post.id} src={post.url} alt="" style={ss.media} />
+        }
+        <div style={{ position:"absolute", left:0, top:0, width:"30%", height:"100%" }} onClick={e=>{e.stopPropagation();goPrev();}} />
+        <div style={{ position:"absolute", right:0, top:0, width:"30%", height:"100%" }} onClick={e=>{e.stopPropagation();goNext();}} />
+      </div>
+      {/* Caption */}
+      {post.caption && (
+        <div style={{ position:"absolute", bottom:56, left:0, right:0, textAlign:"center", color:"rgba(240,237,232,.8)", fontSize:15, padding:"0 48px", fontFamily:"'Playfair Display',serif", fontStyle:"italic", textShadow:"0 1px 8px rgba(0,0,0,.9)", lineHeight:1.6, pointerEvents:"none" }}>
+          {post.caption}
+        </div>
+      )}
+      <button style={{ ...ss.nav, left:16 }} onClick={goPrev}>‹</button>
+      <button style={{ ...ss.nav, right:16 }} onClick={goNext}>›</button>
+      <div style={{ position:"absolute", bottom:22, left:"50%", transform:"translateX(-50%)", color:C.whiteFaint, fontSize:10, fontFamily:"'Jost',sans-serif", letterSpacing:3 }}>
+        {toRoman(current+1)} / {toRoman(total)}
+      </div>
+    </div>
+  );
+}
+const ss = {
+  avatar:{ width:32, height:32, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, color:"#fff", flexShrink:0 },
+  ctrl:  { background:"rgba(201,168,76,.12)", border:`1px solid ${C.border}`, color:C.whiteMuted, borderRadius:2, width:34, height:34, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)" },
+  media: { maxWidth:"100%", maxHeight:"100vh", objectFit:"contain", display:"block", userSelect:"none" },
+  nav:   { position:"absolute", top:"50%", transform:"translateY(-50%)", background:"rgba(201,168,76,.1)", border:`1px solid ${C.border}`, color:C.whiteMuted, borderRadius:2, width:42, height:42, fontSize:26, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)" },
+};
+
 // ─── Name Screen ──────────────────────────────────────────────────────────────
 function NameScreen({ onEnter }) {
   const [name, setName] = useState("");
-
   return (
-    <div style={s.nameScreen}>
-      {/* Texture overlay */}
-      <div style={s.paperTexture} />
-
-      <div style={s.nameCard}>
-        {/* Corner ornaments */}
-        <div style={{ ...s.corner, top:16, left:16, borderTop:`1px solid ${C.accentLight}`, borderLeft:`1px solid ${C.accentLight}` }} />
-        <div style={{ ...s.corner, top:16, right:16, borderTop:`1px solid ${C.accentLight}`, borderRight:`1px solid ${C.accentLight}` }} />
-        <div style={{ ...s.corner, bottom:16, left:16, borderBottom:`1px solid ${C.accentLight}`, borderLeft:`1px solid ${C.accentLight}` }} />
-        <div style={{ ...s.corner, bottom:16, right:16, borderBottom:`1px solid ${C.accentLight}`, borderRight:`1px solid ${C.accentLight}` }} />
-
-        <div style={s.badgeSmall}>✦ Galleria del Ricordo ✦</div>
-
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center", justifyContent:"center", padding:20, position:"relative", overflow:"hidden" }}>
+      {/* Ambient glow */}
+      <div style={{ position:"absolute", top:"30%", left:"50%", transform:"translate(-50%,-50%)", width:500, height:500, background:`radial-gradient(circle, ${C.goldPale} 0%, transparent 70%)`, pointerEvents:"none" }} />
+      <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:4, padding:"60px 52px", maxWidth:460, width:"100%", textAlign:"center", position:"relative", animation:"fadeUp .7s ease both", zIndex:1, boxShadow:`0 0 80px rgba(201,168,76,.06), 0 8px 40px rgba(0,0,0,.4)` }}>
+        {/* Inner frame */}
+        <div style={{ position:"absolute", inset:10, border:`1px solid ${C.goldPale}`, borderRadius:2, pointerEvents:"none" }} />
+        <div style={s.eyebrow}>GALLERIA DEGLI OSPITI</div>
         <h1 style={s.heroTitle}>{config.eventName}</h1>
-
-        <div style={s.heroSubtitle}>{config.eventSubtitle}</div>
-        {config.eventDate && <div style={s.heroDate}>{config.eventDate}</div>}
-
-        <Ornament />
-
-        <p style={s.welcomeText}>
-          Come ti chiami?<br/>
-          <span style={{ fontStyle:"italic", color:C.textMuted }}>Ci fa piacere sapere chi condivide questi ricordi preziosi.</span>
+        {config.eventSubtitle && (
+          <div style={{ fontSize:11, color:C.gold, letterSpacing:3, textTransform:"uppercase", marginBottom:4 }}>{config.eventSubtitle}</div>
+        )}
+        <Rule width={220} />
+        <p style={{ fontSize:15, color:C.whiteMuted, lineHeight:1.8, margin:"8px 0 28px", fontFamily:"'Playfair Display',serif", fontStyle:"italic" }}>
+          Condividi i tuoi ricordi più belli di questa giornata straordinaria
         </p>
-
         <input
-          style={s.elegantInput}
+          style={{ ...s.lineInput, textAlign:"center" }}
           placeholder="Il tuo nome..."
           value={name}
           onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && name.trim() && onEnter(name.trim())}
+          onKeyDown={e => e.key==="Enter" && name.trim() && onEnter(name.trim())}
           autoFocus
         />
-
         <button
-          style={{ ...s.goldBtn, opacity: name.trim() ? 1 : 0.45, marginTop:8 }}
+          style={{ ...s.goldBtn, marginTop:20, opacity: name.trim() ? 1 : 0.4 }}
           onClick={() => name.trim() && onEnter(name.trim())}
         >
-          Entra nella Galleria
+          Entra nella galleria
         </button>
-
-        <div style={s.nameFootnote}>Un momento speciale merita di essere ricordato.</div>
+        <p style={{ fontSize:10, color:C.whiteFaint, marginTop:16, letterSpacing:1, fontStyle:"italic" }}>
+          Le tue foto saranno visibili a tutti gli ospiti
+        </p>
       </div>
     </div>
   );
@@ -257,139 +369,101 @@ function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }
 
   const addFiles = useCallback(incoming => {
     const items = Array.from(incoming).slice(0, config.maxFilesPerUpload).map(f => ({
-      file:f, preview:URL.createObjectURL(f),
-      type:f.type.startsWith("video")?"video":"image",
-      progress:0, status:"pending",
+      file:f, preview:URL.createObjectURL(f), type:f.type.startsWith("video")?"video":"image", progress:0, status:"pending"
     }));
     setFiles(prev => [...prev, ...items].slice(0, config.maxFilesPerUpload));
   }, []);
 
-  const removeFile = i => setFiles(prev => prev.filter((_,j) => j !== i));
+  const removeFile = i => setFiles(prev => prev.filter((_,j)=>j!==i));
   const handleDrop = useCallback(e => { e.preventDefault(); addFiles(e.dataTransfer.files); }, [addFiles]);
-  const updateFile = (idx, patch) => setFiles(prev => prev.map((f,i) => i===idx ? {...f,...patch} : f));
+  const updateStatus = (idx, patch) => setFiles(prev => prev.map((f,i)=>i===idx?{...f,...patch}:f));
 
   const handlePost = async () => {
-    if (!files.length) { setShake(true); setTimeout(()=>setShake(false),600); return; }
+    if (files.length===0) { setShake(true); setTimeout(()=>setShake(false),600); return; }
     setUploading(true); setError(null);
-    setFiles(prev => prev.map(f => ({...f, status:"uploading", progress:0})));
+    setFiles(prev => prev.map(f=>({...f,status:"uploading",progress:0})));
     try {
-      const { urls, errors } = await uploadFiles(
-        files.map(f=>f.file),
-        (idx,pct) => updateFile(idx,{progress:pct, status:pct===100?"done":"uploading"})
-      );
-      if (errors.length) {
-        errors.forEach(e => { const idx=files.findIndex(f=>f.file===e.file); if(idx>=0) updateFile(idx,{status:"error"}); });
+      const { urls, errors } = await uploadFiles(files.map(f=>f.file), (idx,pct)=>updateStatus(idx,{progress:pct,status:pct===100?"done":"uploading"}));
+      if (errors.length>0) {
+        errors.forEach(e=>{ const idx=files.findIndex(f=>f.file===e.file); if(idx>=0) updateStatus(idx,{status:"error"}); });
         setError(`${errors.length} file non caricati.`);
       }
-      if (urls.length) {
-        const saved = await savePosts(urls.map(({file,url}) => ({
+      if (urls.length>0) {
+        const saved = await savePosts(urls.map(({file,url})=>({
           author:guestName, avatar:initials, color:getAvatarColor(initials),
-          type:file.type.startsWith("video")?"video":"image",
-          url, caption:caption.trim(),
+          type:file.type.startsWith("video")?"video":"image", url, caption:caption.trim()
         })));
-        saved.forEach(p => onPublished(p));
+        saved.forEach(p=>onPublished(p));
       }
-      setFiles(prev => prev.filter(f=>f.status==="error"));
-      setCaption("");
+      setFiles(prev=>prev.filter(f=>f.status==="error")); setCaption("");
     } catch(err) {
       setError("Errore durante il caricamento. Riprova.");
-      setFiles(prev => prev.map(f=>({...f,status:"error"})));
+      setFiles(prev=>prev.map(f=>({...f,status:"error"})));
     } finally { setUploading(false); }
   };
 
-  const doneCount = files.filter(f=>f.status==="done").length;
-  const totalProg = files.length ? Math.round(files.reduce((s,f)=>s+f.progress,0)/files.length) : 0;
+  const done  = files.filter(f=>f.status==="done").length;
+  const prog  = files.length>0 ? Math.round(files.reduce((s,f)=>s+f.progress,0)/files.length) : 0;
 
   return (
-    <div style={s.uploadSection}>
-      <div style={s.uploadCard}>
-        {/* Corner ornaments */}
-        <div style={{ ...s.corner, top:12, left:12, borderTop:`1px solid ${C.border}`, borderLeft:`1px solid ${C.border}` }} />
-        <div style={{ ...s.corner, top:12, right:12, borderTop:`1px solid ${C.border}`, borderRight:`1px solid ${C.border}` }} />
-        <div style={{ ...s.corner, bottom:12, left:12, borderBottom:`1px solid ${C.border}`, borderLeft:`1px solid ${C.border}` }} />
-        <div style={{ ...s.corner, bottom:12, right:12, borderBottom:`1px solid ${C.border}`, borderRight:`1px solid ${C.border}` }} />
+    <div style={{ maxWidth:620, margin:"44px auto 0", padding:"0 24px", position:"relative", zIndex:1 }}>
+      {/* Section heading */}
+      <div style={{ textAlign:"center", marginBottom:24 }}>
+        <div style={s.eyebrow}>CONDIVIDI UN MOMENTO</div>
+        <Rule width={180} />
+      </div>
 
-        <div style={s.badgeSmall}>Condividi un Ricordo</div>
-        <Ornament size={80} />
+      <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:4, padding:"32px 32px 28px", boxShadow:`0 4px 32px rgba(0,0,0,.3)` }}>
+        {error && <div style={{ background:"rgba(180,60,60,.1)", border:"1px solid rgba(180,60,60,.3)", borderRadius:2, padding:"10px 14px", color:"#d08080", fontSize:12, marginBottom:14 }}>{error}</div>}
 
-        {error && <div style={s.errorBanner}>⚠ {error}</div>}
-
-        {/* Drop zone */}
+        {/* Dropzone */}
         <div
-          style={{
-            ...s.dropzone,
-            ...(shake ? s.shake : {}),
-            borderColor: files.length ? C.accent : C.border,
-            background: files.length ? "#fffcf5" : "#fdfaf5",
-          }}
-          onDragOver={e => e.preventDefault()}
-          onDrop={handleDrop}
-          onClick={() => !uploading && fileRef.current.click()}
+          style={{ border:`1.5px dashed`, borderColor: files.length>0 ? C.gold : C.border, borderRadius:3, minHeight:150, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .25s", overflow:"hidden", marginBottom:12, ...(shake?{animation:"shake .5s ease"}:{}) }}
+          onDragOver={e=>e.preventDefault()} onDrop={handleDrop}
+          onClick={()=>!uploading && fileRef.current.click()}
         >
-          {files.length === 0 ? (
-            <div style={s.dropInner}>
-              <div style={s.dropIconElegant}>✦</div>
-              <div style={s.dropTextMain}>Trascina foto e video qui</div>
-              <div style={s.dropTextSub}>oppure clicca per scegliere · max {config.maxFilesPerUpload} file</div>
+          {files.length===0 ? (
+            <div style={{ textAlign:"center", padding:28 }}>
+              <div style={{ fontSize:26, color:C.gold, marginBottom:12, opacity:.7 }}>✦</div>
+              <div style={{ fontSize:15, color:C.whiteMuted, marginBottom:5, fontFamily:"'Playfair Display',serif", fontStyle:"italic" }}>Trascina foto e video qui</div>
+              <div style={{ fontSize:11, color:C.whiteFaint, letterSpacing:1 }}>oppure clicca per scegliere · max {config.maxFilesPerUpload} file</div>
             </div>
           ) : (
-            <div style={s.previewGrid}>
+            <div style={{ display:"flex", flexWrap:"wrap", gap:8, padding:14, width:"100%" }}>
               {files.map((f,i) => (
-                <div key={i} style={s.previewThumb}>
-                  {f.type==="video"
-                    ? <video src={f.preview} style={s.thumbMedia}/>
-                    : <img src={f.preview} alt="" style={s.thumbMedia}/>}
-                  {f.status==="uploading" && <div style={s.thumbOverlay}><span style={{fontSize:11,fontWeight:600,color:"#fff"}}>{f.progress}%</span></div>}
-                  {f.status==="done" && <div style={{...s.thumbOverlay,background:"rgba(100,160,80,.5)"}}><span style={{fontSize:16}}>✓</span></div>}
-                  {f.status==="error" && <div style={{...s.thumbOverlay,background:"rgba(180,60,60,.5)"}}><span style={{fontSize:14}}>✕</span></div>}
-                  {!uploading && <button style={s.thumbRemove} onClick={e=>{e.stopPropagation();removeFile(i);}}>✕</button>}
+                <div key={i} style={{ width:82, height:82, borderRadius:3, overflow:"hidden", position:"relative", flexShrink:0, background:C.bgElevated }}>
+                  {f.type==="video" ? <video src={f.preview} style={s.thumbMedia}/> : <img src={f.preview} alt="" style={s.thumbMedia}/>}
+                  {f.status==="uploading" && <div style={{ position:"absolute",inset:0,background:"rgba(0,0,0,.5)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12 }}>{f.progress}%</div>}
+                  {f.status==="done" && <div style={{ position:"absolute",inset:0,background:"rgba(201,168,76,.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18 }}>✓</div>}
+                  {f.status==="error" && <div style={{ position:"absolute",inset:0,background:"rgba(180,60,60,.4)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 }}>✕</div>}
+                  {!uploading && <button style={s.thumbX} onClick={e=>{e.stopPropagation();removeFile(i);}}>✕</button>}
                 </div>
               ))}
-              {files.length < config.maxFilesPerUpload && !uploading && (
-                <div style={s.addMoreThumb} onClick={e=>{e.stopPropagation();fileRef.current.click();}}>
-                  <span style={{fontSize:22,color:C.textLight}}>+</span>
-                  <span style={{fontSize:9,color:C.textLight,marginTop:2}}>aggiungi</span>
+              {files.length<config.maxFilesPerUpload && !uploading && (
+                <div style={{ width:82,height:82,borderRadius:3,border:`1.5px dashed ${C.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0 }}
+                  onClick={e=>{e.stopPropagation();fileRef.current.click();}}>
+                  <div style={{ fontSize:22, color:C.whiteFaint }}>+</div>
                 </div>
               )}
             </div>
           )}
-          <input ref={fileRef} type="file" accept="image/*,video/*" multiple
-            style={{display:"none"}} onChange={e=>addFiles(e.target.files)}/>
+          <input ref={fileRef} type="file" accept="image/*,video/*" multiple style={{display:"none"}} onChange={e=>addFiles(e.target.files)}/>
         </div>
 
-        {files.length > 0 && (
-          <p style={s.fileCountLabel}>
-            {uploading ? `Caricamento ${doneCount}/${files.length} — ${totalProg}%` : `${files.length} file selezionat${files.length===1?"o":"i"}`}
-          </p>
-        )}
-        {uploading && (
-          <div style={s.progressWrap}>
-            <div style={{...s.progressFill, width:`${totalProg}%`, background:C.accent}}/>
-          </div>
-        )}
+        {files.length>0 && <div style={{ fontSize:11, color:C.whiteMuted, marginBottom:10, textAlign:"center", fontStyle:"italic" }}>{uploading?`Caricamento ${done}/${files.length} — ${prog}%`:`${files.length} file selezionati`}</div>}
+        {uploading && <div style={{ height:1, background:C.border, borderRadius:2, marginBottom:14, overflow:"hidden" }}><div style={{ height:"100%", background:C.gold, width:`${prog}%`, transition:"width .3s ease" }}/></div>}
 
         <textarea
           style={s.elegantTextarea}
-          placeholder="Una dedica, un pensiero... (opzionale)"
-          value={caption}
-          onChange={e => setCaption(e.target.value)}
-          rows={2}
-          disabled={uploading}
+          placeholder="Una didascalia per questo ricordo... (opzionale)"
+          value={caption} onChange={e=>setCaption(e.target.value)} rows={2} disabled={uploading}
         />
-
-        <button
-          style={{...s.goldBtn, opacity:uploading?.65:1}}
-          onClick={handlePost}
-          disabled={uploading}
-        >
-          {uploading
-            ? `⟳ Caricamento ${doneCount}/${files.length}...`
-            : files.length > 1 ? `Pubblica ${files.length} foto` : "Pubblica nella Galleria"}
+        <button style={{ ...s.goldBtn, opacity:uploading?.65:1 }} onClick={handlePost} disabled={uploading}>
+          {uploading ? `Pubblicazione ${done}/${files.length}...` : files.length>1 ? `Pubblica ${files.length} foto` : "Pubblica nella galleria"}
         </button>
-
         {hasPosts && (
-          <button style={s.ghostBtn} onClick={onSlideshow}>
-            ▶ Guarda la Presentazione
+          <button style={{ ...s.ghostBtn, marginTop:10 }} onClick={onSlideshow}>
+            ▶  Guarda la presentazione
           </button>
         )}
       </div>
@@ -400,31 +474,31 @@ function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }
 // ─── Post Card ────────────────────────────────────────────────────────────────
 function PostCard({ post, layout, onLike, onExpand }) {
   return (
-    <div style={layout==="grid" ? s.gridCard : s.feedCard}>
-      <div style={s.cardMediaWrap} onClick={() => post.type==="image" && onExpand(post.url)}>
+    <div style={{ ...(layout==="grid"?s.gridCard:s.feedCard) }}>
+      <div style={{ position:"relative", cursor:"pointer", overflow:"hidden", background:C.bg }} onClick={()=>post.type==="image"&&onExpand(post.url)}>
         {post.type==="video"
           ? <video src={post.url} style={s.cardMedia} controls playsInline/>
-          : <img src={post.url} alt={post.caption||""} style={s.cardMedia} loading="lazy"/>}
-        {post.type==="image" && <div style={s.zoomHint}>⊕</div>}
+          : <img src={post.url} alt={post.caption||""} style={s.cardMedia} loading="lazy"/>
+        }
+        {post.type==="image" && (
+          <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, rgba(14,17,23,.6) 0%, transparent 50%)", opacity:0, transition:"opacity .3s", display:"flex", alignItems:"flex-end", justifyContent:"flex-end", padding:10 }}>
+            <div style={{ color:C.gold, fontSize:12, letterSpacing:1 }}>ESPANDI</div>
+          </div>
+        )}
       </div>
-      <div style={s.cardBody}>
-        <div style={s.cardMeta}>
-          <div style={{...s.cardAvatar, background:post.color}}>{post.avatar}</div>
+      <div style={{ padding:"16px 18px 14px" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+          <div style={{ width:28,height:28,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0, background:post.color }}>{post.avatar}</div>
           <div>
-            <div style={s.cardAuthor}>{post.author}</div>
-            <div style={s.cardTime}>{timeAgo(post.created_at)}</div>
+            <div style={{ fontSize:13, color:C.white, fontFamily:"'Jost',sans-serif", letterSpacing:.3 }}>{post.author}</div>
+            <div style={{ fontSize:10, color:C.whiteFaint, letterSpacing:.5 }}>{timeAgo(post.created_at)}</div>
           </div>
         </div>
-        {post.caption && (
-          <p style={s.cardCaption}>
-            <span style={{color:C.accentLight, marginRight:4}}>"</span>
-            {post.caption}
-            <span style={{color:C.accentLight, marginLeft:4}}>"</span>
-          </p>
-        )}
-        <div style={s.cardFooter}>
-          <button style={{...s.likeBtn, color:post.liked?C.accent:C.textLight}} onClick={()=>onLike(post.id)}>
-            {post.liked ? "♥" : "♡"} <span style={{marginLeft:4}}>{post.likes}</span>
+        {post.caption && <p style={{ fontSize:14, color:C.whiteMuted, lineHeight:1.6, marginBottom:10, fontFamily:"'Playfair Display',serif", fontStyle:"italic" }}>{post.caption}</p>}
+        <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:10, display:"flex", justifyContent:"flex-end" }}>
+          <button style={{ background:"none", border:"none", cursor:"pointer", fontSize:14, color:post.liked?C.gold:C.whiteFaint, fontFamily:"'Jost',sans-serif", transition:"color .15s", padding:0, display:"flex", alignItems:"center", gap:6, letterSpacing:.5 }}
+            onClick={()=>onLike(post.id)}>
+            {post.liked?"♥":"♡"} {post.likes}
           </button>
         </div>
       </div>
@@ -432,117 +506,18 @@ function PostCard({ post, layout, onLike, onExpand }) {
   );
 }
 
-// ─── Slideshow ────────────────────────────────────────────────────────────────
-function Slideshow({ posts, onClose }) {
-  const [current, setCurrent] = useState(0);
-  const [paused, setPaused]   = useState(false);
-  const [progress, setProgress] = useState(0);
-  const timerRef = useRef(null);
-  const progRef  = useRef(null);
-  const DURATION = 4500;
-
-  const total = posts.length;
-  const post  = posts[current];
-
-  const goTo = useCallback(idx => { setCurrent((idx+total)%total); setProgress(0); }, [total]);
-  const goNext = useCallback(() => goTo(current+1), [current, goTo]);
-  const goPrev = useCallback(() => goTo(current-1), [current, goTo]);
-
-  useEffect(() => {
-    if (paused || post?.type==="video") return;
-    setProgress(0);
-    const start = Date.now();
-    progRef.current = setInterval(() => {
-      setProgress(Math.min(((Date.now()-start)/DURATION)*100,100));
-    }, 30);
-    timerRef.current = setTimeout(goNext, DURATION);
-    return () => { clearTimeout(timerRef.current); clearInterval(progRef.current); };
-  }, [current, paused, goNext, post?.type]);
-
-  useEffect(() => {
-    const h = e => {
-      if (e.key==="ArrowRight") goNext();
-      if (e.key==="ArrowLeft")  goPrev();
-      if (e.key==="Escape")     onClose();
-      if (e.key===" ")          setPaused(p=>!p);
-    };
-    window.addEventListener("keydown",h);
-    return () => window.removeEventListener("keydown",h);
-  }, [goNext,goPrev,onClose]);
-
-  if (!post) return null;
-
-  return (
-    <div style={ss.overlay}>
-      {/* Progress bars */}
-      <div style={ss.progRow}>
-        {posts.map((_,i) => (
-          <div key={i} style={ss.progTrack}>
-            <div style={{...ss.progFill, background:C.accentLight, width:i<current?"100%":i===current?`${progress}%`:"0%"}}/>
-          </div>
-        ))}
-      </div>
-      {/* Top bar */}
-      <div style={ss.topBar}>
-        <div style={ss.authorInfo}>
-          <div style={{...ss.dot, background:post.color}}>{post.avatar}</div>
-          <div>
-            <div style={{color:"#fff",fontSize:12,fontWeight:500}}>{post.author}</div>
-            <div style={{color:"rgba(255,255,255,.45)",fontSize:10}}>{timeAgo(post.created_at)}</div>
-          </div>
-        </div>
-        <div style={{display:"flex",gap:8}}>
-          <button style={ss.btn} onClick={()=>setPaused(p=>!p)}>{paused?"▶":"⏸"}</button>
-          <button style={ss.btn} onClick={onClose}>✕</button>
-        </div>
-      </div>
-      {/* Media */}
-      <div style={ss.mediaWrap} onClick={goNext}>
-        {post.type==="video"
-          ? <video key={post.id} src={post.url} style={ss.media} autoPlay playsInline controls onClick={e=>e.stopPropagation()} onEnded={goNext}/>
-          : <img key={post.id} src={post.url} alt="" style={ss.media}/>}
-        <div style={ss.zoneL} onClick={e=>{e.stopPropagation();goPrev();}}/>
-        <div style={ss.zoneR} onClick={e=>{e.stopPropagation();goNext();}}/>
-      </div>
-      {post.caption && <div style={ss.caption}>"{post.caption}"</div>}
-      <button style={{...ss.nav, left:16}} onClick={goPrev}>‹</button>
-      <button style={{...ss.nav, right:16}} onClick={goNext}>›</button>
-      <div style={ss.counter}>{current+1} di {total}</div>
-    </div>
-  );
-}
-
-const ss = {
-  overlay:  {position:"fixed",inset:0,background:"#000",zIndex:2000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"},
-  progRow:  {position:"absolute",top:0,left:0,right:0,display:"flex",gap:3,padding:"14px 18px 0",zIndex:10},
-  progTrack:{flex:1,height:1.5,background:"rgba(255,255,255,.15)",borderRadius:2,overflow:"hidden"},
-  progFill: {height:"100%",borderRadius:2,transition:"width .03s linear"},
-  topBar:   {position:"absolute",top:22,left:0,right:0,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 18px",zIndex:10},
-  authorInfo:{display:"flex",alignItems:"center",gap:10},
-  dot:      {width:32,height:32,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0},
-  btn:      {background:"rgba(255,255,255,.1)",border:"none",color:"#fff",borderRadius:"50%",width:34,height:34,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"},
-  mediaWrap:{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer"},
-  media:    {maxWidth:"100%",maxHeight:"100vh",objectFit:"contain",display:"block",userSelect:"none"},
-  zoneL:    {position:"absolute",left:0,top:0,width:"30%",height:"100%"},
-  zoneR:    {position:"absolute",right:0,top:0,width:"30%",height:"100%"},
-  caption:  {position:"absolute",bottom:56,left:0,right:0,textAlign:"center",color:"rgba(255,255,255,.75)",fontSize:14,padding:"0 60px",lineHeight:1.6,fontStyle:"italic",fontFamily:"'EB Garamond',serif",pointerEvents:"none"},
-  nav:      {position:"absolute",top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.7)",borderRadius:"50%",width:44,height:44,fontSize:28,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"},
-  counter:  {position:"absolute",bottom:18,left:"50%",transform:"translateX(-50%)",color:"rgba(255,255,255,.35)",fontSize:10,letterSpacing:3,fontFamily:"'EB Garamond',serif"},
-};
-
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  const [guestName, setGuestName]         = useState("");
-  const [posts, setPosts]                 = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [view, setView]                   = useState("grid");
-  const [lightbox, setLightbox]           = useState(null);
-  const [showQR, setShowQR]               = useState(false);
+  const [guestName, setGuestName]           = useState("");
+  const [posts, setPosts]                   = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [view, setView]                     = useState("grid");
+  const [lightbox, setLightbox]             = useState(null);
+  const [showQR, setShowQR]                 = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [showAdmin, setShowAdmin]         = useState(false);
-  const [showSlideshow, setShowSlideshow] = useState(false);
+  const [showAdmin, setShowAdmin]           = useState(false);
+  const [showSlideshow, setShowSlideshow]   = useState(false);
   const galleryRef = useRef();
-
   const initials = getInitials(guestName || "?");
 
   useEffect(() => {
@@ -554,125 +529,109 @@ export default function App() {
 
   useEffect(() => {
     const ch = supabase.channel("posts-live")
-      .on("postgres_changes",{event:"INSERT",schema:"public",table:"posts"},
-        payload => setPosts(prev => {
-          if (prev.find(p=>p.id===payload.new.id)) return prev;
-          return [{...payload.new,liked:false},...prev];
-        })
-      ).subscribe();
-    return () => supabase.removeChannel(ch);
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"posts"},payload=>{
+        setPosts(prev=>prev.find(p=>p.id===payload.new.id)?prev:[{...payload.new,liked:false},...prev]);
+      }).subscribe();
+    return ()=>supabase.removeChannel(ch);
   }, []);
 
   const handlePublished = post => {
-    setPosts(prev => {
-      if (prev.find(p=>p.id===post.id)) return prev;
-      return [{...post,liked:false},...prev];
-    });
+    setPosts(prev=>prev.find(p=>p.id===post.id)?prev:[{...post,liked:false},...prev]);
     setTimeout(()=>galleryRef.current?.scrollIntoView({behavior:"smooth"}),150);
   };
 
-  const toggleLike = id => {
-    setPosts(prev => prev.map(post => {
-      if (post.id!==id) return post;
-      const liked=!post.liked, likes=liked?post.likes+1:post.likes-1;
-      updateLikes(id,likes);
-      return {...post,liked,likes};
-    }));
-  };
+  const toggleLike = id => setPosts(prev=>prev.map(p=>{
+    if(p.id!==id) return p;
+    const liked=!p.liked, likes=liked?p.likes+1:p.likes-1;
+    updateLikes(id,likes);
+    return {...p,liked,likes};
+  }));
 
   const handleDeleted = ids => setPosts(prev=>prev.filter(p=>!ids.includes(p.id)));
 
   if (!guestName) return <NameScreen onEnter={setGuestName}/>;
 
   return (
-    <div style={{...s.app, background:C.background}}>
-      <div style={s.paperTexture}/>
+    <div style={{ minHeight:"100vh", background:C.bg, fontFamily:"'Jost',sans-serif", color:C.white, paddingBottom:80, position:"relative" }}>
+      {/* Ambient top glow */}
+      <div style={{ position:"fixed", top:0, left:"50%", transform:"translateX(-50%)", width:800, height:300, background:`radial-gradient(ellipse at top, ${C.goldPale} 0%, transparent 70%)`, pointerEvents:"none", zIndex:0 }}/>
 
       {/* Header */}
-      <header style={s.header}>
-        <div style={s.headerInner}>
-          <div style={s.headerLeft}>
-            <div style={s.badgeSmall}>✦ Galleria del Ricordo ✦</div>
-            <h1 style={s.siteTitle}>{config.eventName}</h1>
-            {config.eventSubtitle && <div style={s.siteSubtitle}>{config.eventSubtitle}</div>}
+      <header style={{ borderBottom:`1px solid ${C.border}`, background:`${C.bg}f0`, position:"sticky", top:0, zIndex:100, backdropFilter:"blur(16px)" }}>
+        <div style={{ maxWidth:1040, margin:"0 auto", padding:"14px 28px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16 }}>
+          <div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:400, fontStyle:"italic", color:C.white, letterSpacing:.3 }}>{config.eventName}</div>
+            {config.eventSubtitle && <div style={{ fontSize:9, color:C.gold, letterSpacing:3, textTransform:"uppercase", marginTop:2 }}>{config.eventSubtitle}</div>}
           </div>
-          <nav style={s.headerNav}>
-            <button style={s.navIconBtn} onClick={()=>setShowAdminLogin(true)} title="Admin">⚙</button>
-            <button style={s.navGoldBtn} onClick={()=>setShowQR(true)}>QR Code</button>
-            <div style={{...s.guestAvatar, background:getAvatarColor(initials)}} title={guestName}>{initials}</div>
-            <div style={s.viewToggle}>
-              <button style={{...s.viewBtn,...(view==="grid"?s.viewBtnActive:{})}} onClick={()=>setView("grid")}>⊞</button>
-              <button style={{...s.viewBtn,...(view==="feed"?s.viewBtnActive:{})}} onClick={()=>setView("feed")}>☰</button>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <button style={s.hdrBtn} onClick={()=>setShowAdminLogin(true)} title="Admin">⚙</button>
+            <button style={s.hdrBtn} onClick={()=>setShowQR(true)} title="QR Code">◻</button>
+            <div style={{ ...ss.avatar, background:getAvatarColor(initials) }} title={guestName}>{initials}</div>
+            <div style={{ display:"flex", border:`1px solid ${C.border}`, borderRadius:2, overflow:"hidden" }}>
+              <button style={{ ...s.viewBtn, ...(view==="grid"?s.viewBtnOn:{}) }} onClick={()=>setView("grid")}>⊞</button>
+              <button style={{ ...s.viewBtn, ...(view==="feed"?s.viewBtnOn:{}) }} onClick={()=>setView("feed")}>☰</button>
             </div>
-          </nav>
+          </div>
         </div>
-        <div style={s.headerRule}/>
+        <div style={{ height:1, background:`linear-gradient(to right, transparent, ${C.gold}40, transparent)`, margin:"0 28px" }}/>
       </header>
 
       {/* Upload */}
-      <UploadPanel
-        guestName={guestName} initials={initials}
-        onPublished={handlePublished}
-        hasPosts={posts.length>0}
-        onSlideshow={()=>setShowSlideshow(true)}
-      />
-
-      {/* Section header */}
-      {!loading && posts.length > 0 && (
-        <div style={s.galleryHeader} ref={galleryRef}>
-          <Ornament size={160}/>
-          <div style={s.galleryTitle}>I Vostri Ricordi</div>
-          <p style={s.galleryCount}>{posts.length} {posts.length===1?"momento condiviso":"momenti condivisi"}</p>
-        </div>
-      )}
+      <UploadPanel guestName={guestName} initials={initials} onPublished={handlePublished} hasPosts={posts.length>0} onSlideshow={()=>setShowSlideshow(true)}/>
 
       {/* Gallery */}
-      <div style={view==="grid" ? s.grid : s.feed}>
+      <div style={{ maxWidth:1040, margin:"40px auto 0", padding:"0 24px", position:"relative", zIndex:1 }}>
+        <div style={{ textAlign:"center", marginBottom:24 }}>
+          <div style={s.eyebrow}>I RICORDI DELLA SERATA</div>
+          <Rule width={200} />
+          {!loading && posts.length>0 && <div style={{ fontSize:11, color:C.whiteFaint, letterSpacing:2 }}>{posts.length} {posts.length===1?"momento condiviso":"momenti condivisi"}</div>}
+        </div>
+      </div>
+
+      <div ref={galleryRef} style={view==="grid"?s.grid:s.feed}>
         {loading ? (
-          <div style={s.stateMsg}>Caricamento in corso...</div>
-        ) : posts.length===0 ? (
-          <div style={s.stateMsg}>
-            <div style={{fontSize:32,marginBottom:12,color:C.accentLight}}>✦</div>
-            Sii il primo a condividere un ricordo speciale.
+          <div style={{ gridColumn:"1/-1", textAlign:"center", color:C.whiteFaint, padding:"70px 20px", fontSize:14, fontStyle:"italic" }}>
+            Caricamento...
           </div>
-        ) : (
-          posts.map(post => (
-            <PostCard key={post.id} post={post} layout={view} onLike={toggleLike} onExpand={setLightbox}/>
-          ))
-        )}
+        ) : posts.length===0 ? (
+          <div style={{ gridColumn:"1/-1", textAlign:"center", color:C.whiteFaint, padding:"70px 20px", fontSize:15, lineHeight:2 }}>
+            <div style={{ fontSize:28, color:C.gold, marginBottom:12, opacity:.4 }}>✦</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontStyle:"italic" }}>Sii il primo a condividere un ricordo</div>
+          </div>
+        ) : posts.map(post => (
+          <PostCard key={post.id} post={post} layout={view} onLike={toggleLike} onExpand={setLightbox}/>
+        ))}
       </div>
 
       {/* Footer */}
-      <footer style={s.footer}>
-        <Ornament size={120}/>
-        <p style={s.footerText}>Con affetto, per Cosimo &amp; Lucia</p>
-      </footer>
+      <div style={{ maxWidth:1040, margin:"60px auto 0", padding:"0 24px 0", textAlign:"center" }}>
+        <Rule width={200}/>
+        <div style={{ fontSize:11, color:C.whiteFaint, letterSpacing:1, fontStyle:"italic" }}>
+          {config.eventName} — {config.eventSubtitle}
+        </div>
+      </div>
 
       {/* Lightbox */}
       {lightbox && (
-        <div style={s.lightboxOverlay} onClick={()=>setLightbox(null)}>
-          <img src={lightbox} alt="" style={s.lightboxImg} onClick={e=>e.stopPropagation()}/>
-          <button style={s.lightboxClose} onClick={()=>setLightbox(null)}>✕</button>
+        <div style={{ position:"fixed",inset:0,background:"rgba(5,7,9,.95)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,cursor:"zoom-out" }} onClick={()=>setLightbox(null)}>
+          <img src={lightbox} alt="" style={{ maxWidth:"90vw",maxHeight:"90vh",objectFit:"contain",cursor:"default",borderRadius:2 }} onClick={e=>e.stopPropagation()}/>
+          <button style={{ position:"absolute",top:20,right:24,background:"none",border:`1px solid ${C.border}`,color:C.whiteMuted,borderRadius:2,width:32,height:32,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }} onClick={()=>setLightbox(null)}>✕</button>
         </div>
       )}
 
-      {showQR          && <QRModal onClose={()=>setShowQR(false)}/>}
-      {showAdminLogin  && <AdminLogin onSuccess={()=>{setShowAdminLogin(false);setShowAdmin(true);}} onClose={()=>setShowAdminLogin(false)}/>}
-      {showAdmin       && <AdminPanel posts={posts} onDelete={handleDeleted} onClose={()=>setShowAdmin(false)}/>}
-      {showSlideshow   && <Slideshow posts={posts} onClose={()=>setShowSlideshow(false)}/>}
+      {showQR        && <QRModal onClose={()=>setShowQR(false)}/>}
+      {showAdminLogin && <AdminLogin onSuccess={()=>{setShowAdminLogin(false);setShowAdmin(true);}} onClose={()=>setShowAdminLogin(false)}/>}
+      {showAdmin     && <AdminPanel posts={posts} onDelete={handleDeleted} onClose={()=>setShowAdmin(false)}/>}
+      {showSlideshow && <Slideshow posts={posts} onClose={()=>setShowSlideshow(false)}/>}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap');
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-        body { background:${C.background}; }
-        input::placeholder, textarea::placeholder { color:${C.textLight}; font-style:italic; font-family:'EB Garamond',serif; }
+        body { background:${C.bg}; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
-        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-        ::-webkit-scrollbar { width:6px; }
-        ::-webkit-scrollbar-track { background:${C.background}; }
-        ::-webkit-scrollbar-thumb { background:${C.border}; border-radius:3px; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+        * { -webkit-tap-highlight-color:transparent; }
+        input, textarea { user-select:text; }
       `}</style>
     </div>
   );
@@ -680,123 +639,43 @@ export default function App() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = {
-  // Layout
-  app:        { minHeight:"100vh", fontFamily:"'EB Garamond',serif", color:C.text, position:"relative", paddingBottom:80 },
-  paperTexture:{ position:"fixed", inset:0, backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E")`, pointerEvents:"none", zIndex:0, opacity:.7 },
+  eyebrow:     { fontSize:9, letterSpacing:4, color:C.gold, textTransform:"uppercase", marginBottom:4 },
+  heroTitle:   { fontFamily:"'Playfair Display',serif", fontSize:52, fontWeight:400, color:C.white, marginBottom:6, fontStyle:"italic", lineHeight:1.1 },
 
-  // Header
-  header:       { background:`${C.background}ee`, borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:100, backdropFilter:"blur(12px)" },
-  headerInner:  { maxWidth:1000, margin:"0 auto", padding:"16px 28px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16 },
-  headerLeft:   { flex:1 },
-  headerRule:   { height:1, background:`linear-gradient(to right, transparent, ${C.accentLight}, transparent)`, margin:"0 28px" },
-  siteTitle:    { fontFamily:"'Cormorant Garamond',serif", fontSize:28, fontWeight:300, color:C.text, letterSpacing:.5, fontStyle:"italic" },
-  siteSubtitle: { fontSize:11, color:C.textMuted, letterSpacing:2, marginTop:2, textTransform:"uppercase" },
-  headerNav:    { display:"flex", alignItems:"center", gap:12, flexShrink:0 },
-  navIconBtn:   { background:"none", border:"none", fontSize:16, cursor:"pointer", color:C.textMuted, padding:"4px 6px" },
-  navGoldBtn:   { background:"none", border:`1px solid ${C.accentLight}`, borderRadius:2, padding:"6px 14px", fontSize:11, fontFamily:"'EB Garamond',serif", color:C.accent, cursor:"pointer", letterSpacing:1, textTransform:"uppercase" },
-  guestAvatar:  { width:32, height:32, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 },
-  viewToggle:   { display:"flex", border:`1px solid ${C.border}`, borderRadius:2, overflow:"hidden" },
-  viewBtn:      { background:"transparent", border:"none", color:C.textLight, padding:"5px 10px", cursor:"pointer", fontSize:13 },
-  viewBtnActive:{ background:C.background, color:C.accent },
+  lineInput:   { width:"100%", background:"transparent", border:"none", borderBottom:`1px solid ${C.border}`, padding:"12px 4px", fontSize:16, fontFamily:"'Jost',sans-serif", color:C.white, outline:"none", letterSpacing:.5 },
+  elegantTextarea:{ width:"100%", background:C.bgElevated, border:`1px solid ${C.border}`, borderRadius:3, padding:"12px 14px", fontSize:14, fontFamily:"'Playfair Display',serif", fontStyle:"italic", color:C.whiteMuted, outline:"none", resize:"none", lineHeight:1.6, marginBottom:14 },
+  thumbMedia:  { width:"100%", height:"100%", objectFit:"cover", display:"block" },
+  thumbX:      { position:"absolute", top:3, right:3, background:"rgba(0,0,0,.7)", border:"none", color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:8, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
 
-  // Badge
-  badgeSmall: { fontSize:9, letterSpacing:4, color:C.accent, textTransform:"uppercase", marginBottom:10 },
+  goldBtn:     { display:"block", width:"100%", background:`linear-gradient(135deg, ${C.gold}, ${C.goldLight})`, border:"none", borderRadius:2, padding:"13px 24px", fontSize:12, fontFamily:"'Jost',sans-serif", fontWeight:500, cursor:"pointer", color:"#0e1117", letterSpacing:2, textTransform:"uppercase", transition:"opacity .2s" },
+  ghostBtn:    { display:"block", width:"100%", background:"transparent", border:`1px solid ${C.borderStrong}`, borderRadius:2, padding:"12px 24px", fontSize:12, fontFamily:"'Jost',sans-serif", cursor:"pointer", color:C.gold, letterSpacing:2, textTransform:"uppercase" },
+  pillBtn:     { background:"transparent", border:`1px solid ${C.border}`, color:C.whiteMuted, borderRadius:2, padding:"5px 12px", fontSize:11, cursor:"pointer", fontFamily:"'Jost',sans-serif", letterSpacing:1 },
+  redPillBtn:  { background:"transparent", border:"1px solid rgba(180,80,80,.5)", color:"#d08080", borderRadius:2, padding:"5px 12px", fontSize:11, cursor:"pointer", fontFamily:"'Jost',sans-serif" },
 
-  // Name screen
-  nameScreen:  { minHeight:"100vh", background:C.background, display:"flex", alignItems:"center", justifyContent:"center", position:"relative", overflow:"hidden", padding:20 },
-  nameCard:    { background:C.surface, border:`1px solid ${C.border}`, borderRadius:4, padding:"56px 52px", maxWidth:460, width:"100%", textAlign:"center", position:"relative", animation:"fadeUp .7s ease both", zIndex:1, boxShadow:`0 2px 40px rgba(184,150,90,.08)` },
-  corner:      { position:"absolute", width:20, height:20 },
-  heroTitle:   { fontFamily:"'Cormorant Garamond',serif", fontSize:52, fontWeight:300, color:C.text, marginBottom:6, fontStyle:"italic", lineHeight:1.1 },
-  heroSubtitle:{ fontSize:12, letterSpacing:3, color:C.accent, textTransform:"uppercase", marginBottom:4 },
-  heroDate:    { fontSize:12, color:C.textMuted, letterSpacing:1, marginBottom:20, fontStyle:"italic" },
-  welcomeText: { fontSize:16, color:C.text, lineHeight:1.7, margin:"20px 0 24px", fontStyle:"italic" },
-  nameFootnote:{ fontSize:11, color:C.textLight, marginTop:16, fontStyle:"italic", letterSpacing:.5 },
+  hdrBtn:      { background:"none", border:"none", fontSize:16, cursor:"pointer", color:C.whiteFaint, padding:"4px 6px", transition:"color .15s" },
+  viewBtn:     { background:"transparent", border:"none", color:C.whiteFaint, padding:"6px 10px", cursor:"pointer", fontSize:13 },
+  viewBtnOn:   { background:C.bgElevated, color:C.gold },
 
-  // Inputs
-  elegantInput: { width:"100%", background:"transparent", border:"none", borderBottom:`1px solid ${C.border}`, padding:"12px 4px", fontSize:16, fontFamily:"'EB Garamond',serif", color:C.text, outline:"none", textAlign:"center", letterSpacing:.5 },
-  elegantTextarea: { width:"100%", background:"transparent", border:`1px solid ${C.border}`, borderRadius:2, padding:"12px 14px", fontSize:15, fontFamily:"'EB Garamond',serif", color:C.text, outline:"none", resize:"none", lineHeight:1.6, marginBottom:14 },
+  grid:        { maxWidth:1040, margin:"0 auto", padding:"0 24px", display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))", gap:20, position:"relative", zIndex:1 },
+  feed:        { maxWidth:580, margin:"0 auto", padding:"0 24px", display:"flex", flexDirection:"column", gap:24, position:"relative", zIndex:1 },
+  gridCard:    { background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:4, overflow:"hidden", animation:"fadeUp .4s ease both", boxShadow:`0 4px 24px rgba(0,0,0,.3)` },
+  feedCard:    { background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:4, overflow:"hidden", animation:"fadeUp .4s ease both", boxShadow:`0 4px 24px rgba(0,0,0,.3)` },
+  cardMedia:   { width:"100%", height:220, objectFit:"cover", display:"block", transition:"transform .4s ease" },
 
-  // Buttons
-  goldBtn:  { display:"block", width:"100%", background:`linear-gradient(135deg, ${C.accent}, ${C.accentLight})`, border:"none", borderRadius:2, padding:"13px 24px", fontSize:13, fontFamily:"'EB Garamond',serif", fontWeight:500, cursor:"pointer", color:"#fff", letterSpacing:2, textTransform:"uppercase", transition:"opacity .2s" },
-  ghostBtn: { display:"block", width:"100%", background:"transparent", border:`1px solid ${C.border}`, borderRadius:2, padding:"11px 24px", fontSize:12, fontFamily:"'EB Garamond',serif", cursor:"pointer", color:C.textMuted, letterSpacing:2, textTransform:"uppercase", marginTop:10 },
-  softBtn:  { background:"transparent", border:`1px solid ${C.border}`, color:C.textMuted, borderRadius:2, padding:"5px 12px", fontSize:11, cursor:"pointer", fontFamily:"'EB Garamond',serif", letterSpacing:1 },
-  redBtn:   { background:"transparent", border:"1px solid #e0a0a0", color:"#c04040", borderRadius:2, padding:"5px 12px", fontSize:11, cursor:"pointer", fontFamily:"'EB Garamond',serif", letterSpacing:1 },
+  overlay:     { position:"fixed", inset:0, background:"rgba(5,7,9,.85)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:500, backdropFilter:"blur(8px)", padding:20 },
+  modal:       { background:C.bgModal, border:`1px solid ${C.border}`, borderRadius:4, padding:"44px 44px 40px", maxWidth:400, width:"100%", textAlign:"center", animation:"fadeUp .3s ease both", boxShadow:`0 0 80px rgba(201,168,76,.08), 0 8px 48px rgba(0,0,0,.6)`, position:"relative" },
+  modalHeading:{ fontFamily:"'Playfair Display',serif", fontSize:26, fontWeight:400, fontStyle:"italic", color:C.white, marginBottom:10 },
+  modalBody:   { fontSize:13, color:C.whiteMuted, lineHeight:1.7, fontFamily:"'Jost',sans-serif" },
+  closeX:      { position:"absolute", top:16, right:18, background:"none", border:"none", color:C.whiteFaint, fontSize:14, cursor:"pointer" },
 
-  // Upload
-  uploadSection:{ maxWidth:600, margin:"40px auto 0", padding:"0 24px", position:"relative", zIndex:1 },
-  uploadCard:   { background:C.surface, border:`1px solid ${C.border}`, borderRadius:4, padding:"36px 36px 32px", textAlign:"center", position:"relative", boxShadow:`0 2px 24px rgba(184,150,90,.06)` },
-  dropzone:     { border:`1.5px dashed`, borderRadius:2, minHeight:150, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .25s", overflow:"hidden", marginBottom:12, marginTop:16 },
-  dropInner:    { textAlign:"center", padding:28 },
-  dropIconElegant: { fontSize:22, color:C.accentLight, marginBottom:10 },
-  dropTextMain: { fontSize:15, color:C.textMuted, marginBottom:4, fontStyle:"italic" },
-  dropTextSub:  { fontSize:11, color:C.textLight, letterSpacing:.5 },
-  previewGrid:  { display:"flex", flexWrap:"wrap", gap:8, padding:14, width:"100%" },
-  previewThumb: { width:80, height:80, borderRadius:2, overflow:"hidden", position:"relative", flexShrink:0, background:C.border },
-  thumbMedia:   { width:"100%", height:"100%", objectFit:"cover", display:"block" },
-  thumbOverlay: { position:"absolute", inset:0, background:"rgba(0,0,0,.45)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff" },
-  thumbRemove:  { position:"absolute", top:3, right:3, background:"rgba(0,0,0,.5)", border:"none", color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:8, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
-  addMoreThumb: { width:80, height:80, borderRadius:2, border:`1.5px dashed ${C.border}`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 },
-  fileCountLabel:{ fontSize:11, color:C.textMuted, marginBottom:10, fontStyle:"italic" },
-  progressWrap: { height:2, background:C.border, borderRadius:2, marginBottom:14, overflow:"hidden" },
-  progressFill: { height:"100%", borderRadius:2, transition:"width .3s ease", animation:"pulse 1.2s ease infinite" },
-  errorBanner:  { background:"#fdf0f0", border:"1px solid #e8c0c0", borderRadius:2, padding:"10px 14px", color:"#c04040", fontSize:12, marginBottom:14, textAlign:"left" },
-  shake:        { animation:"shake .5s ease" },
-
-  // Gallery
-  galleryHeader:{ maxWidth:1000, margin:"40px auto 0", padding:"0 24px", textAlign:"center" },
-  galleryTitle: { fontFamily:"'Cormorant Garamond',serif", fontSize:30, fontWeight:300, fontStyle:"italic", color:C.text, margin:"16px 0 6px" },
-  galleryCount: { fontSize:11, color:C.textMuted, letterSpacing:2, textTransform:"uppercase" },
-  grid:         { maxWidth:1000, margin:"24px auto 0", padding:"0 24px", display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:20 },
-  feed:         { maxWidth:580, margin:"24px auto 0", padding:"0 24px", display:"flex", flexDirection:"column", gap:24 },
-  stateMsg:     { gridColumn:"1/-1", textAlign:"center", color:C.textMuted, padding:"70px 20px", fontSize:15, lineHeight:2, fontStyle:"italic" },
-
-  // Cards
-  gridCard:     { background:C.card, border:`1px solid ${C.border}`, borderRadius:3, overflow:"hidden", animation:"fadeUp .4s ease both", boxShadow:`0 1px 12px rgba(44,36,22,.04)` },
-  feedCard:     { background:C.card, border:`1px solid ${C.border}`, borderRadius:3, overflow:"hidden", animation:"fadeUp .4s ease both", boxShadow:`0 1px 12px rgba(44,36,22,.04)` },
-  cardMediaWrap:{ position:"relative", cursor:"pointer", overflow:"hidden", background:C.border },
-  cardMedia:    { width:"100%", height:220, objectFit:"cover", display:"block", transition:"transform .4s ease" },
-  zoomHint:     { position:"absolute", bottom:10, right:10, background:"rgba(250,247,242,.8)", color:C.accent, borderRadius:2, padding:"3px 7px", fontSize:12 },
-  cardBody:     { padding:"16px 18px 14px" },
-  cardMeta:     { display:"flex", alignItems:"center", gap:10, marginBottom:10 },
-  cardAvatar:   { width:28, height:28, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:"#fff", flexShrink:0 },
-  cardAuthor:   { fontSize:13, fontWeight:500, color:C.text, fontFamily:"'EB Garamond',serif" },
-  cardTime:     { fontSize:10, color:C.textLight, letterSpacing:.5 },
-  cardCaption:  { fontSize:14, color:C.textMuted, lineHeight:1.6, marginBottom:10, fontStyle:"italic" },
-  cardFooter:   { borderTop:`1px solid ${C.border}`, paddingTop:10, display:"flex", justifyContent:"flex-end" },
-  likeBtn:      { background:"none", border:"none", cursor:"pointer", fontSize:14, fontFamily:"'EB Garamond',serif", display:"flex", alignItems:"center", transition:"color .15s", padding:0 },
-
-  // Footer
-  footer:       { maxWidth:1000, margin:"60px auto 0", padding:"0 24px 40px", textAlign:"center" },
-  footerText:   { fontSize:13, color:C.textLight, fontStyle:"italic", marginTop:14, letterSpacing:.5 },
-
-  // Lightbox
-  lightboxOverlay:{ position:"fixed", inset:0, background:"rgba(44,36,22,.92)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, cursor:"zoom-out" },
-  lightboxImg:    { maxWidth:"90vw", maxHeight:"90vh", objectFit:"contain", cursor:"default", borderRadius:2 },
-  lightboxClose:  { position:"absolute", top:20, right:24, background:"none", border:`1px solid rgba(255,255,255,.2)`, color:"rgba(255,255,255,.6)", borderRadius:2, width:32, height:32, fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
-
-  // Modals
-  overlay:       { position:"fixed", inset:0, background:"rgba(44,36,22,.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:500, backdropFilter:"blur(4px)", padding:20 },
-  modalBox:      { background:C.surface, border:`1px solid ${C.border}`, borderRadius:4, padding:"40px 44px", maxWidth:400, width:"100%", textAlign:"center", animation:"fadeUp .3s ease both", boxShadow:`0 8px 48px rgba(44,36,22,.12)`, position:"relative" },
-  modalOrnamentTop:{ fontSize:14, color:C.accentLight, marginBottom:12 },
-  modalTitle:    { fontFamily:"'Cormorant Garamond',serif", fontSize:26, fontWeight:300, fontStyle:"italic", color:C.text, marginBottom:12 },
-  modalSub:      { fontSize:13, color:C.textMuted, lineHeight:1.6 },
-  errorText:     { fontSize:11, color:"#c04040", marginTop:8 },
-  qrWrap:        { background:C.background, borderRadius:3, padding:16, display:"inline-flex", marginBottom:12, marginTop:16, border:`1px solid ${C.border}` },
-  qrImg:         { width:180, height:180, display:"block" },
-  qrUrl:         { fontSize:10, color:C.textLight, marginBottom:8, wordBreak:"break-all", letterSpacing:.5 },
-
-  // Admin
-  adminPanel:  { background:C.surface, border:`1px solid ${C.border}`, borderRadius:4, padding:"28px 28px 32px", maxWidth:680, width:"95%", maxHeight:"88vh", display:"flex", flexDirection:"column", animation:"fadeUp .3s ease both", overflow:"hidden", boxShadow:`0 8px 48px rgba(44,36,22,.1)` },
+  adminPanel:  { background:C.bgModal, border:`1px solid ${C.border}`, borderRadius:4, padding:"28px 28px 32px", maxWidth:700, width:"95%", maxHeight:"88vh", display:"flex", flexDirection:"column", animation:"fadeUp .3s ease both", overflow:"hidden", boxShadow:`0 8px 48px rgba(0,0,0,.6)` },
   adminHead:   { display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:16, flexShrink:0 },
-  adminHeadText:{ textAlign:"left" },
-  closeBtn:    { background:"none", border:"none", color:C.textMuted, fontSize:16, cursor:"pointer", padding:"2px 6px" },
   adminToolbar:{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap", margin:"16px 0", flexShrink:0 },
-  countLabel:  { fontSize:11, color:C.textMuted, fontStyle:"italic" },
-  confirmRow:  { display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" },
   adminGrid:   { display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))", gap:10, overflowY:"auto" },
-  adminThumb:  { position:"relative", borderRadius:2, overflow:"hidden", cursor:"pointer", background:C.border, aspectRatio:"1", transition:"outline .15s" },
+  adminThumb:  { position:"relative", borderRadius:3, overflow:"hidden", cursor:"pointer", background:C.bgElevated, aspectRatio:"1", transition:"outline .15s" },
   adminMedia:  { width:"100%", height:"100%", objectFit:"cover", display:"block" },
-  adminCheck:  { position:"absolute", top:5, left:5, width:18, height:18, borderRadius:3, border:"1.5px solid", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .15s" },
-  adminLabel:  { position:"absolute", bottom:0, left:0, right:0, background:"rgba(0,0,0,.55)", padding:"3px 5px" },
-  videoBadge:  { position:"absolute", top:5, right:5, background:"rgba(0,0,0,.55)", borderRadius:2, padding:"1px 5px", fontSize:8, color:"#fff" },
+  adminCheck:  { position:"absolute", top:5, left:5, width:18, height:18, borderRadius:3, border:"1.5px solid", display:"flex", alignItems:"center", justifyContent:"center" },
+  adminLabel:  { position:"absolute", bottom:0, left:0, right:0, background:"rgba(0,0,0,.65)", padding:"3px 5px", display:"flex", alignItems:"center", gap:4 },
+  adminAvatar: { width:14, height:14, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:6, fontWeight:700, color:"#fff", flexShrink:0 },
+  videoBadge:  { position:"absolute", top:5, right:5, background:"rgba(0,0,0,.65)", borderRadius:2, padding:"1px 5px", fontSize:8, color:"#fff" },
 };
