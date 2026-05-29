@@ -6,316 +6,247 @@ import config from "./config";
 
 const C = config.colors;
 
-// ─── Admin Login Modal ────────────────────────────────────────────────────────
+// ─── Ornamental divider SVG ───────────────────────────────────────────────────
+const Ornament = ({ size = 120 }) => (
+  <svg width={size} height="24" viewBox="0 0 120 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display:"block", margin:"0 auto" }}>
+    <line x1="0" y1="12" x2="46" y2="12" stroke={C.accentLight} strokeWidth="0.75"/>
+    <path d="M52 12 C54 8, 58 6, 60 12 C62 18, 66 16, 68 12" stroke={C.accent} strokeWidth="1" fill="none"/>
+    <circle cx="60" cy="12" r="2.5" fill={C.accent}/>
+    <circle cx="52" cy="12" r="1.2" fill={C.accentLight}/>
+    <circle cx="68" cy="12" r="1.2" fill={C.accentLight}/>
+    <line x1="74" y1="12" x2="120" y2="12" stroke={C.accentLight} strokeWidth="0.75"/>
+  </svg>
+);
 
+// ─── Admin Login ──────────────────────────────────────────────────────────────
 function AdminLogin({ onSuccess, onClose }) {
   const [pwd, setPwd]     = useState("");
   const [error, setError] = useState(false);
   const [shake, setShake] = useState(false);
 
   const handleSubmit = () => {
-    if (pwd === config.adminPassword) {
-      onSuccess();
-    } else {
-      setError(true);
-      setShake(true);
-      setPwd("");
+    if (pwd === config.adminPassword) { onSuccess(); }
+    else {
+      setError(true); setShake(true); setPwd("");
       setTimeout(() => setShake(false), 600);
     }
   };
 
   return (
-    <div style={s.modalOverlay} onClick={onClose}>
-      <div
-        style={{ ...s.modalCard, ...(shake ? s.shakeAnim : {}) }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div style={s.modalHeader}>
-          <div>
-            <div style={{ ...s.badge, color: C.accent }}>AREA RISERVATA</div>
-            <div style={{ fontFamily:"'Instrument Serif',serif", fontSize:16, color:C.text, marginTop:4 }}>
-              Accesso amministratore
-            </div>
-          </div>
-          <button style={s.modalClose} onClick={onClose}>✕</button>
-        </div>
-
-        <p style={{ fontSize:13, color:C.textMuted, marginBottom:20, lineHeight:1.6 }}>
-          Inserisci la password per gestire e cancellare le foto della galleria.
-        </p>
-
+    <div style={s.overlay} onClick={onClose}>
+      <div style={{ ...s.modalBox, ...(shake ? s.shake : {}) }} onClick={e => e.stopPropagation()}>
+        <div style={s.modalOrnamentTop}>✦</div>
+        <h3 style={s.modalTitle}>Area Riservata</h3>
+        <Ornament size={100} />
+        <p style={{ ...s.modalSub, marginTop:16 }}>Inserisci la password per gestire la galleria.</p>
         <input
-          style={{
-            ...s.nameInput,
-            background: C.background, color: C.text,
-            borderColor: error ? "#c04040" : "#2a2a2a",
-            marginBottom: 8,
-          }}
-          type="password"
-          placeholder="Password..."
+          style={{ ...s.elegantInput, borderColor: error ? "#c04040" : C.border, marginTop:20 }}
+          type="password" placeholder="Password..."
           value={pwd}
           onChange={e => { setPwd(e.target.value); setError(false); }}
           onKeyDown={e => e.key === "Enter" && handleSubmit()}
           autoFocus
         />
-        {error && (
-          <div style={{ fontSize:12, color:"#e06060", marginBottom:12 }}>
-            Password errata. Riprova.
-          </div>
-        )}
-
-        <button
-          style={{ ...s.postBtn, background: C.accent, marginTop: 4, opacity: pwd ? 1 : 0.4 }}
-          onClick={handleSubmit}
-          disabled={!pwd}
-        >
-          Entra nel pannello →
+        {error && <p style={s.errorText}>Password errata. Riprova.</p>}
+        <button style={{ ...s.goldBtn, marginTop:20 }} onClick={handleSubmit} disabled={!pwd}>
+          Accedi
         </button>
+        <button style={s.ghostBtn} onClick={onClose}>Annulla</button>
       </div>
     </div>
   );
 }
 
 // ─── Admin Panel ──────────────────────────────────────────────────────────────
-
 function AdminPanel({ posts, onDelete, onClose }) {
-  const [selected, setSelected]   = useState(new Set());
-  const [deleting, setDeleting]   = useState(false);
-  const [confirm, setConfirm]     = useState(false);
+  const [selected, setSelected] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const [confirm, setConfirm]   = useState(false);
 
-  const toggle = (id) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    setSelected(prev =>
-      prev.size === posts.length ? new Set() : new Set(posts.map(p => p.id))
-    );
-  };
+  const toggle    = id => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleAll = () => setSelected(prev => prev.size === posts.length ? new Set() : new Set(posts.map(p => p.id)));
 
   const handleDelete = async () => {
-    if (selected.size === 0) return;
     setDeleting(true);
     try {
-      const toDelete = posts.filter(p => selected.has(p.id));
-      await deletePosts(toDelete);
+      await deletePosts(posts.filter(p => selected.has(p.id)));
       onDelete([...selected]);
       setSelected(new Set());
       setConfirm(false);
-    } catch (err) {
-      console.error("Errore eliminazione:", err);
-    } finally {
-      setDeleting(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setDeleting(false); }
   };
 
   return (
-    <div style={s.modalOverlay} onClick={onClose}>
-      <div
-        style={{ ...s.adminPanel }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div style={s.adminHeader}>
-          <div>
-            <div style={{ ...s.badge, color:"#e06060" }}>PANNELLO ADMIN</div>
-            <div style={{ fontFamily:"'Instrument Serif',serif", fontSize:16, color:C.text, marginTop:4 }}>
-              Gestisci galleria
-            </div>
+    <div style={s.overlay} onClick={onClose}>
+      <div style={{ ...s.adminPanel }} onClick={e => e.stopPropagation()}>
+        <div style={s.adminHead}>
+          <div style={s.adminHeadText}>
+            <div style={s.badgeSmall}>PANNELLO ADMIN</div>
+            <h3 style={s.modalTitle}>Gestisci Galleria</h3>
           </div>
-          <button style={s.modalClose} onClick={onClose}>✕</button>
+          <button style={s.closeBtn} onClick={onClose}>✕</button>
         </div>
-
-        {/* Toolbar */}
+        <Ornament />
         <div style={s.adminToolbar}>
-          <button style={s.adminToolBtn} onClick={toggleAll}>
-            {selected.size === posts.length ? "✕ Deseleziona tutto" : "☑ Seleziona tutto"}
+          <button style={s.softBtn} onClick={toggleAll}>
+            {selected.size === posts.length ? "Deseleziona tutto" : "Seleziona tutto"}
           </button>
-          <div style={{ color: C.textMuted, fontSize:12 }}>
-            {selected.size > 0
-              ? `${selected.size} selezionat${selected.size === 1 ? "o" : "i"}`
-              : `${posts.length} foto/video in totale`
-            }
-          </div>
+          <span style={s.countLabel}>{selected.size > 0 ? `${selected.size} selezionati` : `${posts.length} elementi`}</span>
           {selected.size > 0 && !confirm && (
-            <button
-              style={s.deleteBtn}
-              onClick={() => setConfirm(true)}
-            >
-              🗑 Elimina {selected.size}
-            </button>
+            <button style={s.redBtn} onClick={() => setConfirm(true)}>🗑 Elimina {selected.size}</button>
           )}
           {confirm && (
             <div style={s.confirmRow}>
-              <span style={{ fontSize:12, color:"#e06060" }}>Confermi l'eliminazione?</span>
-              <button
-                style={{ ...s.deleteBtn, opacity: deleting ? 0.6 : 1 }}
-                onClick={handleDelete}
-                disabled={deleting}
-              >
+              <span style={{ color:"#c04040", fontSize:12 }}>Confermi?</span>
+              <button style={{ ...s.redBtn, opacity: deleting ? .6 : 1 }} onClick={handleDelete} disabled={deleting}>
                 {deleting ? "⟳ Eliminazione..." : "Sì, elimina"}
               </button>
-              <button style={s.adminToolBtn} onClick={() => setConfirm(false)}>Annulla</button>
+              <button style={s.softBtn} onClick={() => setConfirm(false)}>Annulla</button>
             </div>
           )}
         </div>
-
-        {/* Grid */}
-        {posts.length === 0 ? (
-          <div style={{ textAlign:"center", color:C.textMuted, padding:"40px 0", fontSize:13 }}>
-            Nessun contenuto nella galleria.
-          </div>
-        ) : (
-          <div style={s.adminGrid}>
-            {posts.map(post => {
-              const sel = selected.has(post.id);
-              return (
-                <div
-                  key={post.id}
-                  style={{
-                    ...s.adminThumb,
-                    outline: sel ? `3px solid #e06060` : "3px solid transparent",
-                  }}
-                  onClick={() => toggle(post.id)}
-                >
-                  {post.type === "video"
-                    ? <video src={post.url} style={s.adminThumbMedia} />
-                    : <img src={post.url} alt="" style={s.adminThumbMedia} loading="lazy" />
-                  }
-                  {/* Selection checkbox */}
-                  <div style={{
-                    ...s.adminCheckbox,
-                    background: sel ? "#e06060" : "rgba(0,0,0,.55)",
-                    borderColor: sel ? "#e06060" : "#555",
-                  }}>
-                    {sel && <span style={{ fontSize:10, color:"#fff", lineHeight:1 }}>✓</span>}
+        {posts.length === 0
+          ? <p style={{ textAlign:"center", color:C.textMuted, padding:"40px 0" }}>Nessun contenuto.</p>
+          : (
+            <div style={s.adminGrid}>
+              {posts.map(post => {
+                const sel = selected.has(post.id);
+                return (
+                  <div key={post.id} style={{ ...s.adminThumb, outline: sel ? `2px solid ${C.accent}` : "2px solid transparent" }} onClick={() => toggle(post.id)}>
+                    {post.type === "video"
+                      ? <video src={post.url} style={s.adminMedia} />
+                      : <img src={post.url} alt="" style={s.adminMedia} loading="lazy" />}
+                    <div style={{ ...s.adminCheck, background: sel ? C.accent : "rgba(250,247,242,.5)", borderColor: sel ? C.accent : C.border }}>
+                      {sel && <span style={{ fontSize:9, color:"#fff" }}>✓</span>}
+                    </div>
+                    <div style={s.adminLabel}>
+                      <span style={{ fontSize:9, color:"#fff", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{post.author}</span>
+                    </div>
+                    {post.type === "video" && <div style={s.videoBadge}>▶</div>}
                   </div>
-                  {/* Author label */}
-                  <div style={s.adminThumbLabel}>
-                    <div style={{ ...s.adminThumbAvatar, background: post.color }}>{post.avatar}</div>
-                    <span style={{ fontSize:10, color:"#ccc", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                      {post.author}
-                    </span>
-                  </div>
-                  {/* Video badge */}
-                  {post.type === "video" && (
-                    <div style={s.videoBadge}>▶</div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
       </div>
     </div>
   );
 }
 
-// ─── QR Code Modal ────────────────────────────────────────────────────────────
-
+// ─── QR Modal ─────────────────────────────────────────────────────────────────
 function QRModal({ onClose }) {
-  const url = config.appUrl;
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&bgcolor=0d0d0d&color=f5f0e8&data=${encodeURIComponent(url)}`;
+  const url   = config.appUrl;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&bgcolor=faf7f2&color=2c2416&data=${encodeURIComponent(url)}`;
 
   const handlePrint = () => {
     const win = window.open("", "_blank");
-    win.document.write(`
-      <!DOCTYPE html><html><head>
-        <meta charset="utf-8"/>
-        <title>QR — ${config.eventName}</title>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap');
-          *{box-sizing:border-box;margin:0;padding:0}
-          body{background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'DM Mono',monospace}
-          .card{border:2px solid #111;border-radius:24px;padding:48px 56px;text-align:center;max-width:420px;width:90%}
-          .badge{font-size:10px;letter-spacing:4px;color:#999;margin-bottom:16px}
-          .title{font-family:'Instrument Serif',serif;font-size:40px;font-weight:400;color:#111;margin-bottom:6px}
-          .sub{font-size:13px;color:#888;margin-bottom:32px}
-          .qr{width:220px;height:220px;border-radius:12px}
-          .cta{margin-top:28px;font-size:12px;color:#555;line-height:1.7}
-          .url{font-size:11px;color:#bbb;margin-top:12px;word-break:break-all}
-        </style>
-      </head><body>
-        <div class="card">
-          <div class="badge">✦ GALLERIA OSPITI ✦</div>
-          <div class="title">${config.eventName}</div>
-          ${config.eventSubtitle ? `<div class="sub">${config.eventSubtitle}</div>` : ""}
-          <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=440x440&bgcolor=ffffff&color=111111&data=${encodeURIComponent(url)}" />
-          <div class="cta">Inquadra il QR code con la fotocamera<br>e condividi le tue foto dell'evento!</div>
-          <div class="url">${url}</div>
-        </div>
-      </body></html>
-    `);
+    win.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="utf-8"/>
+      <title>QR — ${config.eventName}</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=EB+Garamond:wght@400;500&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#faf7f2;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'EB Garamond',serif}
+        .card{border:1px solid #d4af70;border-radius:4px;padding:52px 60px;text-align:center;max-width:440px;width:90%;position:relative}
+        .card::before{content:'';position:absolute;inset:6px;border:0.5px solid #e8dfc8;border-radius:2px;pointer-events:none}
+        .badge{font-size:9px;letter-spacing:5px;color:#b8965a;margin-bottom:14px;text-transform:uppercase}
+        .title{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:300;color:#2c2416;margin-bottom:4px;font-style:italic}
+        .sub{font-size:12px;color:#9a8a6a;margin-bottom:6px;letter-spacing:1px}
+        .date{font-size:11px;color:#c4b08a;margin-bottom:32px;letter-spacing:1px}
+        .qr{width:200px;height:200px;border-radius:2px;border:1px solid #e8dfc8;padding:8px;background:#fff}
+        .cta{margin-top:24px;font-size:12px;color:#9a8a6a;line-height:1.8;font-style:italic}
+        .url{font-size:9px;color:#c4b08a;margin-top:10px;word-break:break-all;letter-spacing:.5px}
+        .divider{margin:20px auto;opacity:.6}
+      </style>
+    </head><body>
+      <div class="card">
+        <div class="badge">✦ Galleria Ospiti ✦</div>
+        <div class="title">${config.eventName}</div>
+        <div class="sub">${config.eventSubtitle || ""}</div>
+        <div class="date">${config.eventDate || ""}</div>
+        <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&bgcolor=ffffff&color=2c2416&data=${encodeURIComponent(url)}" />
+        <div class="cta">Inquadra il codice con la fotocamera<br>e condividi i tuoi ricordi più belli</div>
+        <div class="url">${url}</div>
+      </div>
+    </body></html>`);
     win.document.close();
     setTimeout(() => win.print(), 600);
   };
 
   return (
-    <div style={s.modalOverlay} onClick={onClose}>
-      <div style={s.modalCard} onClick={e => e.stopPropagation()}>
-        <div style={s.modalHeader}>
-          <div>
-            <div style={{ ...s.badge, color: C.accent, marginBottom:4 }}>QR CODE</div>
-            <div style={{ fontFamily:"'Instrument Serif',serif", fontSize:16, color:C.text }}>
-              {config.eventName}
-            </div>
-          </div>
-          <button style={s.modalClose} onClick={onClose}>✕</button>
-        </div>
+    <div style={s.overlay} onClick={onClose}>
+      <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+        <div style={s.modalOrnamentTop}>✦</div>
+        <h3 style={s.modalTitle}>QR Code Invitati</h3>
+        <Ornament size={100} />
         <div style={s.qrWrap}>
-          <img src={qrSrc} alt="QR Code" style={s.qrImg} />
+          <img src={qrSrc} alt="QR" style={s.qrImg} />
         </div>
         <p style={s.qrUrl}>{url}</p>
-        <p style={s.qrHint}>Gli ospiti inquadrano il codice e accedono subito alla galleria.</p>
-        <button style={s.printBtn} onClick={handlePrint}>🖨 Stampa QR code</button>
+        <p style={{ ...s.modalSub, fontStyle:"italic", marginBottom:20 }}>
+          Gli ospiti inquadrano il codice per accedere alla galleria e condividere i loro ricordi.
+        </p>
+        <button style={s.goldBtn} onClick={handlePrint}>🖨 Stampa invito</button>
+        <button style={s.ghostBtn} onClick={onClose}>Chiudi</button>
       </div>
     </div>
   );
 }
 
 // ─── Name Screen ──────────────────────────────────────────────────────────────
-
 function NameScreen({ onEnter }) {
   const [name, setName] = useState("");
+
   return (
-    <div style={{ ...s.nameScreen, background: C.background }}>
-      <div style={{ ...s.nameCard, background: C.card }}>
-        <div style={{ ...s.badge, color: C.accent }}>✦ GALLERIA OSPITI ✦</div>
-        <h1 style={{ ...s.nameTitle, color: C.text }}>{config.eventName}</h1>
-        {config.eventSubtitle && (
-          <div style={{ color: C.accent, fontSize:13, marginBottom:8, letterSpacing:1 }}>
-            {config.eventSubtitle}
-          </div>
-        )}
-        <p style={{ ...s.nameSub, color: C.textMuted }}>
-          Come ti chiami? Così sappiamo chi ha scattato le foto più belle.
+    <div style={s.nameScreen}>
+      {/* Texture overlay */}
+      <div style={s.paperTexture} />
+
+      <div style={s.nameCard}>
+        {/* Corner ornaments */}
+        <div style={{ ...s.corner, top:16, left:16, borderTop:`1px solid ${C.accentLight}`, borderLeft:`1px solid ${C.accentLight}` }} />
+        <div style={{ ...s.corner, top:16, right:16, borderTop:`1px solid ${C.accentLight}`, borderRight:`1px solid ${C.accentLight}` }} />
+        <div style={{ ...s.corner, bottom:16, left:16, borderBottom:`1px solid ${C.accentLight}`, borderLeft:`1px solid ${C.accentLight}` }} />
+        <div style={{ ...s.corner, bottom:16, right:16, borderBottom:`1px solid ${C.accentLight}`, borderRight:`1px solid ${C.accentLight}` }} />
+
+        <div style={s.badgeSmall}>✦ Galleria del Ricordo ✦</div>
+
+        <h1 style={s.heroTitle}>{config.eventName}</h1>
+
+        <div style={s.heroSubtitle}>{config.eventSubtitle}</div>
+        {config.eventDate && <div style={s.heroDate}>{config.eventDate}</div>}
+
+        <Ornament />
+
+        <p style={s.welcomeText}>
+          Come ti chiami?<br/>
+          <span style={{ fontStyle:"italic", color:C.textMuted }}>Ci fa piacere sapere chi condivide questi ricordi preziosi.</span>
         </p>
+
         <input
-          style={{ ...s.nameInput, background: C.background, color: C.text }}
+          style={s.elegantInput}
           placeholder="Il tuo nome..."
           value={name}
           onChange={e => setName(e.target.value)}
           onKeyDown={e => e.key === "Enter" && name.trim() && onEnter(name.trim())}
           autoFocus
         />
+
         <button
-          style={{ ...s.postBtn, background: C.accent, opacity: name.trim() ? 1 : 0.4 }}
+          style={{ ...s.goldBtn, opacity: name.trim() ? 1 : 0.45, marginTop:8 }}
           onClick={() => name.trim() && onEnter(name.trim())}
         >
-          Entra nella galleria →
+          Entra nella Galleria
         </button>
+
+        <div style={s.nameFootnote}>Un momento speciale merita di essere ricordato.</div>
       </div>
-      <div style={s.bgDots} />
     </div>
   );
 }
 
-// ─── Multi-file Upload Panel ──────────────────────────────────────────────────
-
+// ─── Upload Panel ─────────────────────────────────────────────────────────────
 function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }) {
   const [files, setFiles]         = useState([]);
   const [caption, setCaption]     = useState("");
@@ -324,359 +255,291 @@ function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }
   const [shake, setShake]         = useState(false);
   const fileRef = useRef();
 
-  const addFiles = useCallback((incoming) => {
+  const addFiles = useCallback(incoming => {
     const items = Array.from(incoming).slice(0, config.maxFilesPerUpload).map(f => ({
-      file: f,
-      preview: URL.createObjectURL(f),
-      type: f.type.startsWith("video") ? "video" : "image",
-      progress: 0,
-      status: "pending",
+      file:f, preview:URL.createObjectURL(f),
+      type:f.type.startsWith("video")?"video":"image",
+      progress:0, status:"pending",
     }));
     setFiles(prev => [...prev, ...items].slice(0, config.maxFilesPerUpload));
   }, []);
 
-  const removeFile = i => setFiles(prev => prev.filter((_, j) => j !== i));
-
+  const removeFile = i => setFiles(prev => prev.filter((_,j) => j !== i));
   const handleDrop = useCallback(e => { e.preventDefault(); addFiles(e.dataTransfer.files); }, [addFiles]);
-
-  const updateFileStatus = (idx, patch) =>
-    setFiles(prev => prev.map((f, i) => i === idx ? { ...f, ...patch } : f));
+  const updateFile = (idx, patch) => setFiles(prev => prev.map((f,i) => i===idx ? {...f,...patch} : f));
 
   const handlePost = async () => {
-    if (files.length === 0) { setShake(true); setTimeout(() => setShake(false), 600); return; }
-    setUploading(true);
-    setError(null);
-    setFiles(prev => prev.map(f => ({ ...f, status:"uploading", progress:0 })));
-
+    if (!files.length) { setShake(true); setTimeout(()=>setShake(false),600); return; }
+    setUploading(true); setError(null);
+    setFiles(prev => prev.map(f => ({...f, status:"uploading", progress:0})));
     try {
       const { urls, errors } = await uploadFiles(
-        files.map(f => f.file),
-        (idx, pct) => updateFileStatus(idx, { progress:pct, status: pct===100 ? "done" : "uploading" })
+        files.map(f=>f.file),
+        (idx,pct) => updateFile(idx,{progress:pct, status:pct===100?"done":"uploading"})
       );
-
-      if (errors.length > 0) {
-        errors.forEach(e => {
-          const idx = files.findIndex(f => f.file === e.file);
-          if (idx >= 0) updateFileStatus(idx, { status:"error" });
-        });
-        setError(`${errors.length} file non caricati. Gli altri sono stati pubblicati.`);
+      if (errors.length) {
+        errors.forEach(e => { const idx=files.findIndex(f=>f.file===e.file); if(idx>=0) updateFile(idx,{status:"error"}); });
+        setError(`${errors.length} file non caricati.`);
       }
-
-      if (urls.length > 0) {
-        const saved = await savePosts(urls.map(({ file, url }) => ({
-          author: guestName, avatar: initials, color: getAvatarColor(initials),
-          type: file.type.startsWith("video") ? "video" : "image",
-          url, caption: caption.trim(),
+      if (urls.length) {
+        const saved = await savePosts(urls.map(({file,url}) => ({
+          author:guestName, avatar:initials, color:getAvatarColor(initials),
+          type:file.type.startsWith("video")?"video":"image",
+          url, caption:caption.trim(),
         })));
         saved.forEach(p => onPublished(p));
       }
-
-      setFiles(prev => prev.filter(f => f.status === "error"));
+      setFiles(prev => prev.filter(f=>f.status==="error"));
       setCaption("");
-    } catch (err) {
-      setError("Errore durante il caricamento. Controlla la connessione e riprova.");
-      setFiles(prev => prev.map(f => ({ ...f, status:"error" })));
-    } finally {
-      setUploading(false);
-    }
+    } catch(err) {
+      setError("Errore durante il caricamento. Riprova.");
+      setFiles(prev => prev.map(f=>({...f,status:"error"})));
+    } finally { setUploading(false); }
   };
 
-  const doneCount     = files.filter(f => f.status === "done").length;
-  const totalProgress = files.length > 0
-    ? Math.round(files.reduce((s, f) => s + f.progress, 0) / files.length) : 0;
+  const doneCount = files.filter(f=>f.status==="done").length;
+  const totalProg = files.length ? Math.round(files.reduce((s,f)=>s+f.progress,0)/files.length) : 0;
 
   return (
-    <div style={s.uploadPanel}>
-      {error && <div style={s.errorBanner}>⚠ {error}</div>}
+    <div style={s.uploadSection}>
+      <div style={s.uploadCard}>
+        {/* Corner ornaments */}
+        <div style={{ ...s.corner, top:12, left:12, borderTop:`1px solid ${C.border}`, borderLeft:`1px solid ${C.border}` }} />
+        <div style={{ ...s.corner, top:12, right:12, borderTop:`1px solid ${C.border}`, borderRight:`1px solid ${C.border}` }} />
+        <div style={{ ...s.corner, bottom:12, left:12, borderBottom:`1px solid ${C.border}`, borderLeft:`1px solid ${C.border}` }} />
+        <div style={{ ...s.corner, bottom:12, right:12, borderBottom:`1px solid ${C.border}`, borderRight:`1px solid ${C.border}` }} />
 
-      <div
-        style={{
-          ...s.dropzone,
-          ...(shake ? s.dropzoneShake : {}),
-          borderColor: files.length > 0 ? C.accent : "#2e2e2e",
-        }}
-        onDragOver={e => e.preventDefault()}
-        onDrop={handleDrop}
-        onClick={() => !uploading && fileRef.current.click()}
-      >
-        {files.length === 0 ? (
-          <div style={s.dropzoneInner}>
-            <div style={s.dropIcon}>📸</div>
-            <div style={s.dropText}>Trascina foto e video qui</div>
-            <div style={s.dropSub}>oppure clicca · max {config.maxFilesPerUpload} file</div>
-          </div>
-        ) : (
-          <div style={s.previewGrid}>
-            {files.map((f, i) => (
-              <div key={i} style={s.previewThumb}>
-                {f.type === "video"
-                  ? <video src={f.preview} style={s.thumbMedia} />
-                  : <img src={f.preview} alt="" style={s.thumbMedia} />
-                }
-                {f.status === "uploading" && (
-                  <div style={s.thumbOverlay}><div style={s.thumbProgress}>{f.progress}%</div></div>
-                )}
-                {f.status === "done" && (
-                  <div style={{ ...s.thumbOverlay, background:"rgba(0,180,80,.45)" }}>
-                    <div style={{ fontSize:20 }}>✓</div>
-                  </div>
-                )}
-                {f.status === "error" && (
-                  <div style={{ ...s.thumbOverlay, background:"rgba(200,40,40,.5)" }}>
-                    <div style={{ fontSize:16 }}>✕</div>
-                  </div>
-                )}
-                {!uploading && (
-                  <button style={s.thumbRemove} onClick={e => { e.stopPropagation(); removeFile(i); }}>✕</button>
-                )}
-              </div>
-            ))}
-            {files.length < config.maxFilesPerUpload && !uploading && (
-              <div style={s.addMoreThumb} onClick={e => { e.stopPropagation(); fileRef.current.click(); }}>
-                <div style={{ fontSize:24, color:"#555" }}>+</div>
-                <div style={{ fontSize:10, color:"#444", marginTop:4 }}>aggiungi</div>
-              </div>
-            )}
+        <div style={s.badgeSmall}>Condividi un Ricordo</div>
+        <Ornament size={80} />
+
+        {error && <div style={s.errorBanner}>⚠ {error}</div>}
+
+        {/* Drop zone */}
+        <div
+          style={{
+            ...s.dropzone,
+            ...(shake ? s.shake : {}),
+            borderColor: files.length ? C.accent : C.border,
+            background: files.length ? "#fffcf5" : "#fdfaf5",
+          }}
+          onDragOver={e => e.preventDefault()}
+          onDrop={handleDrop}
+          onClick={() => !uploading && fileRef.current.click()}
+        >
+          {files.length === 0 ? (
+            <div style={s.dropInner}>
+              <div style={s.dropIconElegant}>✦</div>
+              <div style={s.dropTextMain}>Trascina foto e video qui</div>
+              <div style={s.dropTextSub}>oppure clicca per scegliere · max {config.maxFilesPerUpload} file</div>
+            </div>
+          ) : (
+            <div style={s.previewGrid}>
+              {files.map((f,i) => (
+                <div key={i} style={s.previewThumb}>
+                  {f.type==="video"
+                    ? <video src={f.preview} style={s.thumbMedia}/>
+                    : <img src={f.preview} alt="" style={s.thumbMedia}/>}
+                  {f.status==="uploading" && <div style={s.thumbOverlay}><span style={{fontSize:11,fontWeight:600,color:"#fff"}}>{f.progress}%</span></div>}
+                  {f.status==="done" && <div style={{...s.thumbOverlay,background:"rgba(100,160,80,.5)"}}><span style={{fontSize:16}}>✓</span></div>}
+                  {f.status==="error" && <div style={{...s.thumbOverlay,background:"rgba(180,60,60,.5)"}}><span style={{fontSize:14}}>✕</span></div>}
+                  {!uploading && <button style={s.thumbRemove} onClick={e=>{e.stopPropagation();removeFile(i);}}>✕</button>}
+                </div>
+              ))}
+              {files.length < config.maxFilesPerUpload && !uploading && (
+                <div style={s.addMoreThumb} onClick={e=>{e.stopPropagation();fileRef.current.click();}}>
+                  <span style={{fontSize:22,color:C.textLight}}>+</span>
+                  <span style={{fontSize:9,color:C.textLight,marginTop:2}}>aggiungi</span>
+                </div>
+              )}
+            </div>
+          )}
+          <input ref={fileRef} type="file" accept="image/*,video/*" multiple
+            style={{display:"none"}} onChange={e=>addFiles(e.target.files)}/>
+        </div>
+
+        {files.length > 0 && (
+          <p style={s.fileCountLabel}>
+            {uploading ? `Caricamento ${doneCount}/${files.length} — ${totalProg}%` : `${files.length} file selezionat${files.length===1?"o":"i"}`}
+          </p>
+        )}
+        {uploading && (
+          <div style={s.progressWrap}>
+            <div style={{...s.progressFill, width:`${totalProg}%`, background:C.accent}}/>
           </div>
         )}
-        <input ref={fileRef} type="file" accept="image/*,video/*" multiple
-          style={{ display:"none" }} onChange={e => addFiles(e.target.files)} />
-      </div>
 
-      {files.length > 0 && (
-        <div style={s.fileCount}>
+        <textarea
+          style={s.elegantTextarea}
+          placeholder="Una dedica, un pensiero... (opzionale)"
+          value={caption}
+          onChange={e => setCaption(e.target.value)}
+          rows={2}
+          disabled={uploading}
+        />
+
+        <button
+          style={{...s.goldBtn, opacity:uploading?.65:1}}
+          onClick={handlePost}
+          disabled={uploading}
+        >
           {uploading
-            ? `⟳ Caricamento ${doneCount}/${files.length} — ${totalProgress}%`
-            : `${files.length} file selezionat${files.length===1?"o":"i"}`}
-        </div>
-      )}
-      {uploading && (
-        <div style={s.progressWrap}>
-          <div style={{ ...s.progressBar, width:`${totalProgress}%`, background:C.accent }} />
-        </div>
-      )}
-
-      <textarea
-        style={{ ...s.captionInput, background:C.background, color:C.text }}
-        placeholder="Aggiungi una didascalia... (opzionale)"
-        value={caption}
-        onChange={e => setCaption(e.target.value)}
-        rows={2}
-        disabled={uploading}
-      />
-      <button
-        style={{ ...s.postBtn, background:C.accent, opacity:uploading?0.65:1 }}
-        onClick={handlePost}
-        disabled={uploading}
-      >
-        {uploading
-          ? `⟳ Pubblicazione ${doneCount}/${files.length}...`
-          : files.length > 1 ? `✦ Pubblica ${files.length} foto` : "✦ Pubblica nella galleria"}
-      </button>
-      {hasPosts && (
-        <button style={s.slideshowBtn} onClick={onSlideshow}>
-          ▶ Guarda la presentazione
+            ? `⟳ Caricamento ${doneCount}/${files.length}...`
+            : files.length > 1 ? `Pubblica ${files.length} foto` : "Pubblica nella Galleria"}
         </button>
-      )}
+
+        {hasPosts && (
+          <button style={s.ghostBtn} onClick={onSlideshow}>
+            ▶ Guarda la Presentazione
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 // ─── Post Card ────────────────────────────────────────────────────────────────
-
 function PostCard({ post, layout, onLike, onExpand }) {
   return (
-    <div style={{ ...(layout==="grid" ? s.gridCard : s.feedCard), background:C.card }}>
-      <div style={s.mediaWrap} onClick={() => post.type==="image" && onExpand(post.url)}>
-        {post.type === "video"
-          ? <video src={post.url} style={s.media} controls playsInline />
-          : <img src={post.url} alt={post.caption||""} style={s.media} loading="lazy" />
-        }
-        {post.type === "image" && <div style={s.expandHint}>🔍</div>}
+    <div style={layout==="grid" ? s.gridCard : s.feedCard}>
+      <div style={s.cardMediaWrap} onClick={() => post.type==="image" && onExpand(post.url)}>
+        {post.type==="video"
+          ? <video src={post.url} style={s.cardMedia} controls playsInline/>
+          : <img src={post.url} alt={post.caption||""} style={s.cardMedia} loading="lazy"/>}
+        {post.type==="image" && <div style={s.zoomHint}>⊕</div>}
       </div>
       <div style={s.cardBody}>
-        <div style={s.cardTop}>
-          <div style={{ ...s.cardAvatar, background:post.color }}>{post.avatar}</div>
+        <div style={s.cardMeta}>
+          <div style={{...s.cardAvatar, background:post.color}}>{post.avatar}</div>
           <div>
-            <div style={{ ...s.cardAuthor, color:C.text }}>{post.author}</div>
+            <div style={s.cardAuthor}>{post.author}</div>
             <div style={s.cardTime}>{timeAgo(post.created_at)}</div>
           </div>
         </div>
-        {post.caption && <p style={s.cardCaption}>{post.caption}</p>}
-        <button
-          style={{ ...s.likeBtn, color:post.liked ? C.accent : "#555" }}
-          onClick={() => onLike(post.id)}
-        >
-          {post.liked ? "★" : "☆"} {post.likes}
-        </button>
+        {post.caption && (
+          <p style={s.cardCaption}>
+            <span style={{color:C.accentLight, marginRight:4}}>"</span>
+            {post.caption}
+            <span style={{color:C.accentLight, marginLeft:4}}>"</span>
+          </p>
+        )}
+        <div style={s.cardFooter}>
+          <button style={{...s.likeBtn, color:post.liked?C.accent:C.textLight}} onClick={()=>onLike(post.id)}>
+            {post.liked ? "♥" : "♡"} <span style={{marginLeft:4}}>{post.likes}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
 // ─── Slideshow ────────────────────────────────────────────────────────────────
-
-function Slideshow({ posts, startIndex = 0, onClose }) {
-  const [current, setCurrent]   = useState(startIndex);
-  const [paused, setPaused]     = useState(false);
+function Slideshow({ posts, onClose }) {
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused]   = useState(false);
   const [progress, setProgress] = useState(0);
-  const timerRef  = useRef(null);
-  const progRef   = useRef(null);
-  const videoRef  = useRef(null);
-  const DURATION  = 4000; // ms per foto
+  const timerRef = useRef(null);
+  const progRef  = useRef(null);
+  const DURATION = 4500;
 
-  const imagePosts = posts.filter(p => p.type === "image" || p.type === "video");
-  const total      = imagePosts.length;
-  const post       = imagePosts[current];
+  const total = posts.length;
+  const post  = posts[current];
 
-  const goTo = useCallback((idx) => {
-    const next = (idx + total) % total;
-    setCurrent(next);
-    setProgress(0);
-  }, [total]);
+  const goTo = useCallback(idx => { setCurrent((idx+total)%total); setProgress(0); }, [total]);
+  const goNext = useCallback(() => goTo(current+1), [current, goTo]);
+  const goPrev = useCallback(() => goTo(current-1), [current, goTo]);
 
-  const goNext = useCallback(() => goTo(current + 1), [current, goTo]);
-  const goPrev = useCallback(() => goTo(current - 1), [current, goTo]);
-
-  // Auto-advance timer (only for images)
   useEffect(() => {
-    if (paused || post?.type === "video") return;
+    if (paused || post?.type==="video") return;
     setProgress(0);
     const start = Date.now();
-
     progRef.current = setInterval(() => {
-      const elapsed = Date.now() - start;
-      setProgress(Math.min((elapsed / DURATION) * 100, 100));
+      setProgress(Math.min(((Date.now()-start)/DURATION)*100,100));
     }, 30);
-
     timerRef.current = setTimeout(goNext, DURATION);
-
-    return () => {
-      clearTimeout(timerRef.current);
-      clearInterval(progRef.current);
-    };
+    return () => { clearTimeout(timerRef.current); clearInterval(progRef.current); };
   }, [current, paused, goNext, post?.type]);
 
-  // Keyboard navigation
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key === "ArrowRight") goNext();
-      if (e.key === "ArrowLeft")  goPrev();
-      if (e.key === "Escape")     onClose();
-      if (e.key === " ")          setPaused(p => !p);
+    const h = e => {
+      if (e.key==="ArrowRight") goNext();
+      if (e.key==="ArrowLeft")  goPrev();
+      if (e.key==="Escape")     onClose();
+      if (e.key===" ")          setPaused(p=>!p);
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [goNext, goPrev, onClose]);
+    window.addEventListener("keydown",h);
+    return () => window.removeEventListener("keydown",h);
+  }, [goNext,goPrev,onClose]);
 
   if (!post) return null;
 
   return (
     <div style={ss.overlay}>
       {/* Progress bars */}
-      <div style={ss.progressRow}>
-        {imagePosts.map((_, i) => (
-          <div key={i} style={ss.progressTrack}>
-            <div style={{
-              ...ss.progressFill,
-              background: C.accent,
-              width: i < current ? "100%" : i === current ? `${progress}%` : "0%",
-              transition: i === current ? "none" : undefined,
-            }} />
+      <div style={ss.progRow}>
+        {posts.map((_,i) => (
+          <div key={i} style={ss.progTrack}>
+            <div style={{...ss.progFill, background:C.accentLight, width:i<current?"100%":i===current?`${progress}%`:"0%"}}/>
           </div>
         ))}
       </div>
-
       {/* Top bar */}
       <div style={ss.topBar}>
-        <div style={ss.authorRow}>
-          <div style={{ ...ss.avatar, background: post.color }}>{post.avatar}</div>
+        <div style={ss.authorInfo}>
+          <div style={{...ss.dot, background:post.color}}>{post.avatar}</div>
           <div>
-            <div style={{ color: "#fff", fontSize: 13, fontWeight: 600 }}>{post.author}</div>
-            <div style={{ color: "rgba(255,255,255,.5)", fontSize: 11 }}>{timeAgo(post.created_at)}</div>
+            <div style={{color:"#fff",fontSize:12,fontWeight:500}}>{post.author}</div>
+            <div style={{color:"rgba(255,255,255,.45)",fontSize:10}}>{timeAgo(post.created_at)}</div>
           </div>
         </div>
-        <div style={ss.topActions}>
-          <button style={ss.iconBtn} onClick={() => setPaused(p => !p)} title={paused ? "Riprendi" : "Pausa"}>
-            {paused ? "▶" : "⏸"}
-          </button>
-          <button style={ss.iconBtn} onClick={onClose} title="Chiudi">✕</button>
+        <div style={{display:"flex",gap:8}}>
+          <button style={ss.btn} onClick={()=>setPaused(p=>!p)}>{paused?"▶":"⏸"}</button>
+          <button style={ss.btn} onClick={onClose}>✕</button>
         </div>
       </div>
-
       {/* Media */}
       <div style={ss.mediaWrap} onClick={goNext}>
-        {post.type === "video" ? (
-          <video
-            ref={videoRef}
-            key={post.id}
-            src={post.url}
-            style={ss.media}
-            autoPlay
-            playsInline
-            controls
-            onClick={e => e.stopPropagation()}
-            onEnded={goNext}
-          />
-        ) : (
-          <img
-            key={post.id}
-            src={post.url}
-            alt={post.caption || ""}
-            style={ss.media}
-          />
-        )}
-
-        {/* Left / Right tap zones */}
-        <div style={ss.zoneLeft}  onClick={e => { e.stopPropagation(); goPrev(); }} />
-        <div style={ss.zoneRight} onClick={e => { e.stopPropagation(); goNext(); }} />
+        {post.type==="video"
+          ? <video key={post.id} src={post.url} style={ss.media} autoPlay playsInline controls onClick={e=>e.stopPropagation()} onEnded={goNext}/>
+          : <img key={post.id} src={post.url} alt="" style={ss.media}/>}
+        <div style={ss.zoneL} onClick={e=>{e.stopPropagation();goPrev();}}/>
+        <div style={ss.zoneR} onClick={e=>{e.stopPropagation();goNext();}}/>
       </div>
-
-      {/* Caption */}
-      {post.caption && (
-        <div style={ss.caption}>{post.caption}</div>
-      )}
-
-      {/* Nav arrows */}
-      <button style={{ ...ss.navBtn, left: 16 }} onClick={goPrev}>‹</button>
-      <button style={{ ...ss.navBtn, right: 16 }} onClick={goNext}>›</button>
-
-      {/* Counter */}
-      <div style={ss.counter}>{current + 1} / {total}</div>
+      {post.caption && <div style={ss.caption}>"{post.caption}"</div>}
+      <button style={{...ss.nav, left:16}} onClick={goPrev}>‹</button>
+      <button style={{...ss.nav, right:16}} onClick={goNext}>›</button>
+      <div style={ss.counter}>{current+1} di {total}</div>
     </div>
   );
 }
 
 const ss = {
-  overlay:      { position:"fixed", inset:0, background:"#000", zIndex:2000, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center" },
-  progressRow:  { position:"absolute", top:0, left:0, right:0, display:"flex", gap:3, padding:"12px 16px 0", zIndex:10 },
-  progressTrack:{ flex:1, height:2, background:"rgba(255,255,255,.2)", borderRadius:2, overflow:"hidden" },
-  progressFill: { height:"100%", borderRadius:2, transition:"width .03s linear" },
-  topBar:       { position:"absolute", top:20, left:0, right:0, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 16px", zIndex:10 },
-  authorRow:    { display:"flex", alignItems:"center", gap:10 },
-  avatar:       { width:34, height:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 },
-  topActions:   { display:"flex", gap:8 },
-  iconBtn:      { background:"rgba(0,0,0,.4)", border:"none", color:"#fff", borderRadius:"50%", width:36, height:36, fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)" },
-  mediaWrap:    { width:"100%", height:"100%", display:"flex", alignItems:"center", justifyContent:"center", position:"relative", cursor:"pointer" },
-  media:        { maxWidth:"100%", maxHeight:"100vh", objectFit:"contain", display:"block", userSelect:"none" },
-  zoneLeft:     { position:"absolute", left:0, top:0, width:"30%", height:"100%" },
-  zoneRight:    { position:"absolute", right:0, top:0, width:"30%", height:"100%" },
-  caption:      { position:"absolute", bottom:60, left:0, right:0, textAlign:"center", color:"rgba(255,255,255,.85)", fontSize:14, padding:"0 48px", lineHeight:1.5, textShadow:"0 1px 6px rgba(0,0,0,.8)", pointerEvents:"none" },
-  navBtn:       { position:"absolute", top:"50%", transform:"translateY(-50%)", background:"rgba(255,255,255,.1)", border:"none", color:"#fff", borderRadius:"50%", width:44, height:44, fontSize:26, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(4px)", lineHeight:1 },
-  counter:      { position:"absolute", bottom:20, left:"50%", transform:"translateX(-50%)", color:"rgba(255,255,255,.4)", fontSize:11, fontFamily:"'DM Mono',monospace", letterSpacing:2 },
+  overlay:  {position:"fixed",inset:0,background:"#000",zIndex:2000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"},
+  progRow:  {position:"absolute",top:0,left:0,right:0,display:"flex",gap:3,padding:"14px 18px 0",zIndex:10},
+  progTrack:{flex:1,height:1.5,background:"rgba(255,255,255,.15)",borderRadius:2,overflow:"hidden"},
+  progFill: {height:"100%",borderRadius:2,transition:"width .03s linear"},
+  topBar:   {position:"absolute",top:22,left:0,right:0,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 18px",zIndex:10},
+  authorInfo:{display:"flex",alignItems:"center",gap:10},
+  dot:      {width:32,height:32,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0},
+  btn:      {background:"rgba(255,255,255,.1)",border:"none",color:"#fff",borderRadius:"50%",width:34,height:34,fontSize:13,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"},
+  mediaWrap:{width:"100%",height:"100%",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",cursor:"pointer"},
+  media:    {maxWidth:"100%",maxHeight:"100vh",objectFit:"contain",display:"block",userSelect:"none"},
+  zoneL:    {position:"absolute",left:0,top:0,width:"30%",height:"100%"},
+  zoneR:    {position:"absolute",right:0,top:0,width:"30%",height:"100%"},
+  caption:  {position:"absolute",bottom:56,left:0,right:0,textAlign:"center",color:"rgba(255,255,255,.75)",fontSize:14,padding:"0 60px",lineHeight:1.6,fontStyle:"italic",fontFamily:"'EB Garamond',serif",pointerEvents:"none"},
+  nav:      {position:"absolute",top:"50%",transform:"translateY(-50%)",background:"rgba(255,255,255,.08)",border:"none",color:"rgba(255,255,255,.7)",borderRadius:"50%",width:44,height:44,fontSize:28,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)"},
+  counter:  {position:"absolute",bottom:18,left:"50%",transform:"translateX(-50%)",color:"rgba(255,255,255,.35)",fontSize:10,letterSpacing:3,fontFamily:"'EB Garamond',serif"},
 };
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
-
 export default function App() {
-  const [guestName, setGuestName]   = useState("");
-  const [posts, setPosts]           = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [view, setView]             = useState("grid");
-  const [lightbox, setLightbox]     = useState(null);
-  const [showQR, setShowQR]         = useState(false);
+  const [guestName, setGuestName]         = useState("");
+  const [posts, setPosts]                 = useState([]);
+  const [loading, setLoading]             = useState(true);
+  const [view, setView]                   = useState("grid");
+  const [lightbox, setLightbox]           = useState(null);
+  const [showQR, setShowQR]               = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [showAdmin, setShowAdmin]   = useState(false);
+  const [showAdmin, setShowAdmin]         = useState(false);
   const [showSlideshow, setShowSlideshow] = useState(false);
   const galleryRef = useRef();
 
@@ -684,250 +547,256 @@ export default function App() {
 
   useEffect(() => {
     fetchPosts()
-      .then(data => setPosts(data.map(p => ({ ...p, liked:false }))))
-      .catch(err => console.error("Errore fetch:", err))
-      .finally(() => setLoading(false));
+      .then(data => setPosts(data.map(p=>({...p,liked:false}))))
+      .catch(console.error)
+      .finally(()=>setLoading(false));
   }, []);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("posts-live")
-      .on("postgres_changes",
-        { event:"INSERT", schema:"public", table:"posts" },
-        payload => {
-          setPosts(prev => {
-            if (prev.find(p => p.id === payload.new.id)) return prev;
-            return [{ ...payload.new, liked:false }, ...prev];
-          });
-        }
-      )
-      .subscribe();
-    return () => supabase.removeChannel(channel);
+    const ch = supabase.channel("posts-live")
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"posts"},
+        payload => setPosts(prev => {
+          if (prev.find(p=>p.id===payload.new.id)) return prev;
+          return [{...payload.new,liked:false},...prev];
+        })
+      ).subscribe();
+    return () => supabase.removeChannel(ch);
   }, []);
 
   const handlePublished = post => {
     setPosts(prev => {
-      if (prev.find(p => p.id === post.id)) return prev;
-      return [{ ...post, liked:false }, ...prev];
+      if (prev.find(p=>p.id===post.id)) return prev;
+      return [{...post,liked:false},...prev];
     });
-    setTimeout(() => galleryRef.current?.scrollIntoView({ behavior:"smooth" }), 150);
+    setTimeout(()=>galleryRef.current?.scrollIntoView({behavior:"smooth"}),150);
   };
 
   const toggleLike = id => {
     setPosts(prev => prev.map(post => {
-      if (post.id !== id) return post;
-      const liked = !post.liked;
-      const likes = liked ? post.likes + 1 : post.likes - 1;
-      updateLikes(id, likes);
-      return { ...post, liked, likes };
+      if (post.id!==id) return post;
+      const liked=!post.liked, likes=liked?post.likes+1:post.likes-1;
+      updateLikes(id,likes);
+      return {...post,liked,likes};
     }));
   };
 
-  // Called after admin deletes posts
-  const handleDeleted = (deletedIds) => {
-    setPosts(prev => prev.filter(p => !deletedIds.includes(p.id)));
-  };
+  const handleDeleted = ids => setPosts(prev=>prev.filter(p=>!ids.includes(p.id)));
 
-  if (!guestName) return <NameScreen onEnter={setGuestName} />;
+  if (!guestName) return <NameScreen onEnter={setGuestName}/>;
 
   return (
-    <div style={{ ...s.app, background:C.background }}>
-      {/* Header */}
-      <header style={{ ...s.header, background:`${C.background}f0` }}>
-        <div style={s.headerInner}>
-          <div>
-            <div style={{ ...s.badge, color:C.accent }}>GALLERIA OSPITI</div>
-            <h1 style={{ ...s.headerTitle, color:C.text }}>{config.eventName}</h1>
-            {config.eventSubtitle && (
-              <div style={{ fontSize:11, color:C.textMuted, marginTop:1 }}>{config.eventSubtitle}</div>
-            )}
-          </div>
-          <div style={s.headerRight}>
-            {/* Admin button — piccolo e discreto */}
-            <button
-              style={{ ...s.iconBtn, color:"#333", fontSize:16 }}
-              onClick={() => setShowAdminLogin(true)}
-              title="Amministrazione"
-            >
-              ⚙
-            </button>
-            <button style={{ ...s.iconBtn, color:C.accent }} onClick={() => setShowQR(true)} title="QR Code">
-              ⬛
-            </button>
+    <div style={{...s.app, background:C.background}}>
+      <div style={s.paperTexture}/>
 
-            <div style={{ ...s.avatar, background:getAvatarColor(initials) }} title={guestName}>
-              {initials}
-            </div>
-            <div style={s.viewToggle}>
-              <button style={{ ...s.toggleBtn, ...(view==="grid"?{...s.toggleActive,color:C.accent}:{}) }} onClick={() => setView("grid")}>⊞</button>
-              <button style={{ ...s.toggleBtn, ...(view==="feed"?{...s.toggleActive,color:C.accent}:{}) }} onClick={() => setView("feed")}>☰</button>
-            </div>
+      {/* Header */}
+      <header style={s.header}>
+        <div style={s.headerInner}>
+          <div style={s.headerLeft}>
+            <div style={s.badgeSmall}>✦ Galleria del Ricordo ✦</div>
+            <h1 style={s.siteTitle}>{config.eventName}</h1>
+            {config.eventSubtitle && <div style={s.siteSubtitle}>{config.eventSubtitle}</div>}
           </div>
+          <nav style={s.headerNav}>
+            <button style={s.navIconBtn} onClick={()=>setShowAdminLogin(true)} title="Admin">⚙</button>
+            <button style={s.navGoldBtn} onClick={()=>setShowQR(true)}>QR Code</button>
+            <div style={{...s.guestAvatar, background:getAvatarColor(initials)}} title={guestName}>{initials}</div>
+            <div style={s.viewToggle}>
+              <button style={{...s.viewBtn,...(view==="grid"?s.viewBtnActive:{})}} onClick={()=>setView("grid")}>⊞</button>
+              <button style={{...s.viewBtn,...(view==="feed"?s.viewBtnActive:{})}} onClick={()=>setView("feed")}>☰</button>
+            </div>
+          </nav>
         </div>
+        <div style={s.headerRule}/>
       </header>
 
-      <UploadPanel guestName={guestName} initials={initials} onPublished={handlePublished} hasPosts={posts.length > 0} onSlideshow={() => setShowSlideshow(true)} />
+      {/* Upload */}
+      <UploadPanel
+        guestName={guestName} initials={initials}
+        onPublished={handlePublished}
+        hasPosts={posts.length>0}
+        onSlideshow={()=>setShowSlideshow(true)}
+      />
+
+      {/* Section header */}
+      {!loading && posts.length > 0 && (
+        <div style={s.galleryHeader} ref={galleryRef}>
+          <Ornament size={160}/>
+          <div style={s.galleryTitle}>I Vostri Ricordi</div>
+          <p style={s.galleryCount}>{posts.length} {posts.length===1?"momento condiviso":"momenti condivisi"}</p>
+        </div>
+      )}
 
       {/* Gallery */}
-      <div ref={galleryRef} style={view==="grid" ? s.grid : s.feed}>
+      <div style={view==="grid" ? s.grid : s.feed}>
         {loading ? (
-          <div style={s.stateMsg}>⟳ Caricamento galleria...</div>
-        ) : posts.length === 0 ? (
+          <div style={s.stateMsg}>Caricamento in corso...</div>
+        ) : posts.length===0 ? (
           <div style={s.stateMsg}>
-            <div style={{ fontSize:44, marginBottom:10 }}>🎉</div>
-            Sii il primo a condividere un momento!
+            <div style={{fontSize:32,marginBottom:12,color:C.accentLight}}>✦</div>
+            Sii il primo a condividere un ricordo speciale.
           </div>
         ) : (
           posts.map(post => (
-            <PostCard key={post.id} post={post} layout={view} onLike={toggleLike} onExpand={setLightbox} />
+            <PostCard key={post.id} post={post} layout={view} onLike={toggleLike} onExpand={setLightbox}/>
           ))
         )}
       </div>
 
+      {/* Footer */}
+      <footer style={s.footer}>
+        <Ornament size={120}/>
+        <p style={s.footerText}>Con affetto, per Cosimo &amp; Lucia</p>
+      </footer>
+
       {/* Lightbox */}
       {lightbox && (
-        <div style={s.lightbox} onClick={() => setLightbox(null)}>
-          <img src={lightbox} alt="" style={s.lightboxImg} onClick={e => e.stopPropagation()} />
-          <button style={s.lightboxClose} onClick={() => setLightbox(null)}>✕</button>
+        <div style={s.lightboxOverlay} onClick={()=>setLightbox(null)}>
+          <img src={lightbox} alt="" style={s.lightboxImg} onClick={e=>e.stopPropagation()}/>
+          <button style={s.lightboxClose} onClick={()=>setLightbox(null)}>✕</button>
         </div>
       )}
 
-      {/* Slideshow */}
-      {showSlideshow && (
-        <Slideshow
-          posts={posts}
-          startIndex={0}
-          onClose={() => setShowSlideshow(false)}
-        />
-      )}
-
-      {/* QR Modal */}
-      {showQR && <QRModal onClose={() => setShowQR(false)} />}
-
-      {/* Admin login */}
-      {showAdminLogin && (
-        <AdminLogin
-          onSuccess={() => { setShowAdminLogin(false); setShowAdmin(true); }}
-          onClose={() => setShowAdminLogin(false)}
-        />
-      )}
-
-      {/* Admin panel */}
-      {showAdmin && (
-        <AdminPanel
-          posts={posts}
-          onDelete={handleDeleted}
-          onClose={() => setShowAdmin(false)}
-        />
-      )}
+      {showQR          && <QRModal onClose={()=>setShowQR(false)}/>}
+      {showAdminLogin  && <AdminLogin onSuccess={()=>{setShowAdminLogin(false);setShowAdmin(true);}} onClose={()=>setShowAdminLogin(false)}/>}
+      {showAdmin       && <AdminPanel posts={posts} onDelete={handleDeleted} onClose={()=>setShowAdmin(false)}/>}
+      {showSlideshow   && <Slideshow posts={posts} onClose={()=>setShowSlideshow(false)}/>}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
         body { background:${C.background}; }
-        @keyframes shake {
-          0%,100%{transform:translateX(0)}
-          20%{transform:translateX(-8px)} 40%{transform:translateX(8px)}
-          60%{transform:translateX(-5px)} 80%{transform:translateX(5px)}
-        }
-        @keyframes fadeUp {
-          from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)}
-        }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+        input::placeholder, textarea::placeholder { color:${C.textLight}; font-style:italic; font-family:'EB Garamond',serif; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:${C.background}; }
+        ::-webkit-scrollbar-thumb { background:${C.border}; border-radius:3px; }
       `}</style>
     </div>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
 const s = {
-  nameScreen:   { minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"'DM Mono',monospace", position:"relative", overflow:"hidden" },
-  nameCard:     { border:"1px solid #252525", borderRadius:20, padding:"52px 44px", maxWidth:420, width:"90%", textAlign:"center", zIndex:1, animation:"fadeUp .6s ease both" },
-  badge:        { fontSize:10, letterSpacing:4, marginBottom:12 },
-  nameTitle:    { fontFamily:"'Instrument Serif',serif", fontSize:48, marginBottom:8, fontWeight:400 },
-  nameSub:      { fontSize:14, lineHeight:1.65, marginBottom:28 },
-  nameInput:    { width:"100%", border:"1px solid #2a2a2a", borderRadius:10, padding:"14px 18px", fontSize:16, fontFamily:"'DM Mono',monospace", outline:"none", marginBottom:16 },
-  postBtn:      { width:"100%", border:"none", borderRadius:12, padding:14, fontSize:13, fontFamily:"'DM Mono',monospace", fontWeight:700, cursor:"pointer", letterSpacing:1, color:"#0d0d0d", display:"block" },
-  bgDots:       { position:"absolute", inset:0, backgroundImage:"radial-gradient(#1e1e1e 1px,transparent 1px)", backgroundSize:"28px 28px" },
+  // Layout
+  app:        { minHeight:"100vh", fontFamily:"'EB Garamond',serif", color:C.text, position:"relative", paddingBottom:80 },
+  paperTexture:{ position:"fixed", inset:0, backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E")`, pointerEvents:"none", zIndex:0, opacity:.7 },
 
-  app:          { minHeight:"100vh", fontFamily:"'DM Mono',monospace", paddingBottom:80 },
-  header:       { borderBottom:"1px solid #181818", position:"sticky", top:0, zIndex:100, backdropFilter:"blur(14px)" },
-  headerInner:  { maxWidth:960, margin:"0 auto", padding:"14px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" },
-  headerTitle:  { fontFamily:"'Instrument Serif',serif", fontSize:28, fontWeight:400 },
-  headerRight:  { display:"flex", alignItems:"center", gap:10 },
-  iconBtn:      { background:"none", border:"none", fontSize:18, cursor:"pointer", padding:"4px 6px", borderRadius:6 },
-  slideshowBtn: { width:"100%", marginTop:10, border:`1px solid ${C.accent}`, borderRadius:12, padding:"13px", fontSize:13, fontFamily:"'DM Mono',monospace", fontWeight:600, cursor:"pointer", color:C.accent, background:"transparent", letterSpacing:.5, display:"block" },
-  avatar:       { width:34, height:34, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, fontSize:11, color:"#fff", flexShrink:0 },
-  viewToggle:   { display:"flex", border:"1px solid #252525", borderRadius:8, overflow:"hidden" },
-  toggleBtn:    { background:"transparent", border:"none", color:"#444", padding:"6px 10px", cursor:"pointer", fontSize:14 },
-  toggleActive: { background:"#1a1a1a" },
+  // Header
+  header:       { background:`${C.background}ee`, borderBottom:`1px solid ${C.border}`, position:"sticky", top:0, zIndex:100, backdropFilter:"blur(12px)" },
+  headerInner:  { maxWidth:1000, margin:"0 auto", padding:"16px 28px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16 },
+  headerLeft:   { flex:1 },
+  headerRule:   { height:1, background:`linear-gradient(to right, transparent, ${C.accentLight}, transparent)`, margin:"0 28px" },
+  siteTitle:    { fontFamily:"'Cormorant Garamond',serif", fontSize:28, fontWeight:300, color:C.text, letterSpacing:.5, fontStyle:"italic" },
+  siteSubtitle: { fontSize:11, color:C.textMuted, letterSpacing:2, marginTop:2, textTransform:"uppercase" },
+  headerNav:    { display:"flex", alignItems:"center", gap:12, flexShrink:0 },
+  navIconBtn:   { background:"none", border:"none", fontSize:16, cursor:"pointer", color:C.textMuted, padding:"4px 6px" },
+  navGoldBtn:   { background:"none", border:`1px solid ${C.accentLight}`, borderRadius:2, padding:"6px 14px", fontSize:11, fontFamily:"'EB Garamond',serif", color:C.accent, cursor:"pointer", letterSpacing:1, textTransform:"uppercase" },
+  guestAvatar:  { width:32, height:32, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 },
+  viewToggle:   { display:"flex", border:`1px solid ${C.border}`, borderRadius:2, overflow:"hidden" },
+  viewBtn:      { background:"transparent", border:"none", color:C.textLight, padding:"5px 10px", cursor:"pointer", fontSize:13 },
+  viewBtnActive:{ background:C.background, color:C.accent },
 
-  uploadPanel:  { maxWidth:620, margin:"24px auto 0", padding:"0 20px", animation:"fadeUp .5s ease both" },
-  errorBanner:  { background:"#1f0e0e", border:"1px solid #5a1a1a", borderRadius:10, padding:"10px 16px", color:"#e08080", fontSize:12, marginBottom:14 },
-  dropzone:     { border:"2px dashed", borderRadius:14, minHeight:160, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .25s", overflow:"hidden", position:"relative", marginBottom:10, cursor:"pointer", background:"#0f0f0f" },
-  dropzoneShake:{ animation:"shake .5s ease" },
-  dropzoneInner:{ textAlign:"center", padding:32 },
-  dropIcon:     { fontSize:36, marginBottom:10 },
-  dropText:     { color:"#888", fontSize:14, marginBottom:5 },
-  dropSub:      { color:"#444", fontSize:11 },
-  previewGrid:  { display:"flex", flexWrap:"wrap", gap:8, padding:14, width:"100%", alignItems:"flex-start" },
-  previewThumb: { width:90, height:90, borderRadius:10, overflow:"hidden", position:"relative", flexShrink:0, background:"#1a1a1a" },
+  // Badge
+  badgeSmall: { fontSize:9, letterSpacing:4, color:C.accent, textTransform:"uppercase", marginBottom:10 },
+
+  // Name screen
+  nameScreen:  { minHeight:"100vh", background:C.background, display:"flex", alignItems:"center", justifyContent:"center", position:"relative", overflow:"hidden", padding:20 },
+  nameCard:    { background:C.surface, border:`1px solid ${C.border}`, borderRadius:4, padding:"56px 52px", maxWidth:460, width:"100%", textAlign:"center", position:"relative", animation:"fadeUp .7s ease both", zIndex:1, boxShadow:`0 2px 40px rgba(184,150,90,.08)` },
+  corner:      { position:"absolute", width:20, height:20 },
+  heroTitle:   { fontFamily:"'Cormorant Garamond',serif", fontSize:52, fontWeight:300, color:C.text, marginBottom:6, fontStyle:"italic", lineHeight:1.1 },
+  heroSubtitle:{ fontSize:12, letterSpacing:3, color:C.accent, textTransform:"uppercase", marginBottom:4 },
+  heroDate:    { fontSize:12, color:C.textMuted, letterSpacing:1, marginBottom:20, fontStyle:"italic" },
+  welcomeText: { fontSize:16, color:C.text, lineHeight:1.7, margin:"20px 0 24px", fontStyle:"italic" },
+  nameFootnote:{ fontSize:11, color:C.textLight, marginTop:16, fontStyle:"italic", letterSpacing:.5 },
+
+  // Inputs
+  elegantInput: { width:"100%", background:"transparent", border:"none", borderBottom:`1px solid ${C.border}`, padding:"12px 4px", fontSize:16, fontFamily:"'EB Garamond',serif", color:C.text, outline:"none", textAlign:"center", letterSpacing:.5 },
+  elegantTextarea: { width:"100%", background:"transparent", border:`1px solid ${C.border}`, borderRadius:2, padding:"12px 14px", fontSize:15, fontFamily:"'EB Garamond',serif", color:C.text, outline:"none", resize:"none", lineHeight:1.6, marginBottom:14 },
+
+  // Buttons
+  goldBtn:  { display:"block", width:"100%", background:`linear-gradient(135deg, ${C.accent}, ${C.accentLight})`, border:"none", borderRadius:2, padding:"13px 24px", fontSize:13, fontFamily:"'EB Garamond',serif", fontWeight:500, cursor:"pointer", color:"#fff", letterSpacing:2, textTransform:"uppercase", transition:"opacity .2s" },
+  ghostBtn: { display:"block", width:"100%", background:"transparent", border:`1px solid ${C.border}`, borderRadius:2, padding:"11px 24px", fontSize:12, fontFamily:"'EB Garamond',serif", cursor:"pointer", color:C.textMuted, letterSpacing:2, textTransform:"uppercase", marginTop:10 },
+  softBtn:  { background:"transparent", border:`1px solid ${C.border}`, color:C.textMuted, borderRadius:2, padding:"5px 12px", fontSize:11, cursor:"pointer", fontFamily:"'EB Garamond',serif", letterSpacing:1 },
+  redBtn:   { background:"transparent", border:"1px solid #e0a0a0", color:"#c04040", borderRadius:2, padding:"5px 12px", fontSize:11, cursor:"pointer", fontFamily:"'EB Garamond',serif", letterSpacing:1 },
+
+  // Upload
+  uploadSection:{ maxWidth:600, margin:"40px auto 0", padding:"0 24px", position:"relative", zIndex:1 },
+  uploadCard:   { background:C.surface, border:`1px solid ${C.border}`, borderRadius:4, padding:"36px 36px 32px", textAlign:"center", position:"relative", boxShadow:`0 2px 24px rgba(184,150,90,.06)` },
+  dropzone:     { border:`1.5px dashed`, borderRadius:2, minHeight:150, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", transition:"all .25s", overflow:"hidden", marginBottom:12, marginTop:16 },
+  dropInner:    { textAlign:"center", padding:28 },
+  dropIconElegant: { fontSize:22, color:C.accentLight, marginBottom:10 },
+  dropTextMain: { fontSize:15, color:C.textMuted, marginBottom:4, fontStyle:"italic" },
+  dropTextSub:  { fontSize:11, color:C.textLight, letterSpacing:.5 },
+  previewGrid:  { display:"flex", flexWrap:"wrap", gap:8, padding:14, width:"100%" },
+  previewThumb: { width:80, height:80, borderRadius:2, overflow:"hidden", position:"relative", flexShrink:0, background:C.border },
   thumbMedia:   { width:"100%", height:"100%", objectFit:"cover", display:"block" },
-  thumbOverlay: { position:"absolute", inset:0, background:"rgba(0,0,0,.5)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontWeight:700 },
-  thumbProgress:{ fontSize:12, fontWeight:700, color:"#fff" },
-  thumbRemove:  { position:"absolute", top:3, right:3, background:"rgba(0,0,0,.7)", border:"none", color:"#fff", borderRadius:"50%", width:18, height:18, fontSize:9, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
-  addMoreThumb: { width:90, height:90, borderRadius:10, border:"2px dashed #2a2a2a", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 },
-  fileCount:    { fontSize:11, color:"#555", marginBottom:10, textAlign:"center" },
-  progressWrap: { height:3, background:"#1a1a1a", borderRadius:4, marginBottom:12, overflow:"hidden" },
-  progressBar:  { height:"100%", borderRadius:4, transition:"width .3s ease", animation:"pulse 1.2s ease infinite" },
-  captionInput: { width:"100%", border:"1px solid #1e1e1e", borderRadius:12, padding:"13px 15px", fontSize:13, fontFamily:"'DM Mono',monospace", outline:"none", resize:"none", marginBottom:12, lineHeight:1.5 },
+  thumbOverlay: { position:"absolute", inset:0, background:"rgba(0,0,0,.45)", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff" },
+  thumbRemove:  { position:"absolute", top:3, right:3, background:"rgba(0,0,0,.5)", border:"none", color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:8, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
+  addMoreThumb: { width:80, height:80, borderRadius:2, border:`1.5px dashed ${C.border}`, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 },
+  fileCountLabel:{ fontSize:11, color:C.textMuted, marginBottom:10, fontStyle:"italic" },
+  progressWrap: { height:2, background:C.border, borderRadius:2, marginBottom:14, overflow:"hidden" },
+  progressFill: { height:"100%", borderRadius:2, transition:"width .3s ease", animation:"pulse 1.2s ease infinite" },
+  errorBanner:  { background:"#fdf0f0", border:"1px solid #e8c0c0", borderRadius:2, padding:"10px 14px", color:"#c04040", fontSize:12, marginBottom:14, textAlign:"left" },
+  shake:        { animation:"shake .5s ease" },
 
-  grid:     { maxWidth:960, margin:"24px auto 0", padding:"0 20px", display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(255px,1fr))", gap:18 },
-  feed:     { maxWidth:540, margin:"24px auto 0", padding:"0 20px", display:"flex", flexDirection:"column", gap:22 },
-  stateMsg: { gridColumn:"1/-1", textAlign:"center", color:"#3a3a3a", padding:"70px 20px", fontSize:14, lineHeight:2 },
+  // Gallery
+  galleryHeader:{ maxWidth:1000, margin:"40px auto 0", padding:"0 24px", textAlign:"center" },
+  galleryTitle: { fontFamily:"'Cormorant Garamond',serif", fontSize:30, fontWeight:300, fontStyle:"italic", color:C.text, margin:"16px 0 6px" },
+  galleryCount: { fontSize:11, color:C.textMuted, letterSpacing:2, textTransform:"uppercase" },
+  grid:         { maxWidth:1000, margin:"24px auto 0", padding:"0 24px", display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:20 },
+  feed:         { maxWidth:580, margin:"24px auto 0", padding:"0 24px", display:"flex", flexDirection:"column", gap:24 },
+  stateMsg:     { gridColumn:"1/-1", textAlign:"center", color:C.textMuted, padding:"70px 20px", fontSize:15, lineHeight:2, fontStyle:"italic" },
 
-  gridCard:   { border:"1px solid #1a1a1a", borderRadius:14, overflow:"hidden", animation:"fadeUp .4s ease both" },
-  feedCard:   { border:"1px solid #1a1a1a", borderRadius:14, overflow:"hidden", animation:"fadeUp .4s ease both" },
-  mediaWrap:  { position:"relative", cursor:"pointer", overflow:"hidden", background:"#0a0a0a" },
-  media:      { width:"100%", height:210, objectFit:"cover", display:"block" },
-  expandHint: { position:"absolute", bottom:8, right:8, background:"rgba(0,0,0,.65)", borderRadius:6, padding:"3px 7px", fontSize:13 },
-  cardBody:   { padding:"13px 15px 11px" },
-  cardTop:    { display:"flex", alignItems:"center", gap:9, marginBottom:7 },
-  cardAvatar: { width:30, height:30, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700, color:"#fff", flexShrink:0 },
-  cardAuthor: { fontSize:12, fontWeight:600 },
-  cardTime:   { fontSize:10, color:"#444" },
-  cardCaption:{ fontSize:12, color:"#999", lineHeight:1.55, marginBottom:9 },
-  likeBtn:    { background:"none", border:"none", cursor:"pointer", fontSize:13, fontFamily:"'DM Mono',monospace", transition:"color .15s", padding:0 },
+  // Cards
+  gridCard:     { background:C.card, border:`1px solid ${C.border}`, borderRadius:3, overflow:"hidden", animation:"fadeUp .4s ease both", boxShadow:`0 1px 12px rgba(44,36,22,.04)` },
+  feedCard:     { background:C.card, border:`1px solid ${C.border}`, borderRadius:3, overflow:"hidden", animation:"fadeUp .4s ease both", boxShadow:`0 1px 12px rgba(44,36,22,.04)` },
+  cardMediaWrap:{ position:"relative", cursor:"pointer", overflow:"hidden", background:C.border },
+  cardMedia:    { width:"100%", height:220, objectFit:"cover", display:"block", transition:"transform .4s ease" },
+  zoomHint:     { position:"absolute", bottom:10, right:10, background:"rgba(250,247,242,.8)", color:C.accent, borderRadius:2, padding:"3px 7px", fontSize:12 },
+  cardBody:     { padding:"16px 18px 14px" },
+  cardMeta:     { display:"flex", alignItems:"center", gap:10, marginBottom:10 },
+  cardAvatar:   { width:28, height:28, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:"#fff", flexShrink:0 },
+  cardAuthor:   { fontSize:13, fontWeight:500, color:C.text, fontFamily:"'EB Garamond',serif" },
+  cardTime:     { fontSize:10, color:C.textLight, letterSpacing:.5 },
+  cardCaption:  { fontSize:14, color:C.textMuted, lineHeight:1.6, marginBottom:10, fontStyle:"italic" },
+  cardFooter:   { borderTop:`1px solid ${C.border}`, paddingTop:10, display:"flex", justifyContent:"flex-end" },
+  likeBtn:      { background:"none", border:"none", cursor:"pointer", fontSize:14, fontFamily:"'EB Garamond',serif", display:"flex", alignItems:"center", transition:"color .15s", padding:0 },
 
-  lightbox:      { position:"fixed", inset:0, background:"rgba(0,0,0,.93)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, cursor:"zoom-out" },
-  lightboxImg:   { maxWidth:"90vw", maxHeight:"90vh", borderRadius:10, objectFit:"contain", cursor:"default" },
-  lightboxClose: { position:"absolute", top:18, right:22, background:"none", border:"none", color:"#888", fontSize:20, cursor:"pointer" },
+  // Footer
+  footer:       { maxWidth:1000, margin:"60px auto 0", padding:"0 24px 40px", textAlign:"center" },
+  footerText:   { fontSize:13, color:C.textLight, fontStyle:"italic", marginTop:14, letterSpacing:.5 },
 
-  modalOverlay: { position:"fixed", inset:0, background:"rgba(0,0,0,.85)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:200, backdropFilter:"blur(6px)" },
-  modalCard:    { background:"#141414", border:"1px solid #252525", borderRadius:20, padding:"32px 36px", maxWidth:380, width:"90%", animation:"fadeUp .3s ease both" },
-  modalHeader:  { display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20 },
-  modalClose:   { background:"none", border:"none", color:"#555", fontSize:18, cursor:"pointer" },
-  shakeAnim:    { animation:"shake .5s ease" },
+  // Lightbox
+  lightboxOverlay:{ position:"fixed", inset:0, background:"rgba(44,36,22,.92)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000, cursor:"zoom-out" },
+  lightboxImg:    { maxWidth:"90vw", maxHeight:"90vh", objectFit:"contain", cursor:"default", borderRadius:2 },
+  lightboxClose:  { position:"absolute", top:20, right:24, background:"none", border:`1px solid rgba(255,255,255,.2)`, color:"rgba(255,255,255,.6)", borderRadius:2, width:32, height:32, fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
 
-  qrWrap:   { background:"#0d0d0d", borderRadius:14, padding:20, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:16 },
-  qrImg:    { width:220, height:220, borderRadius:8, display:"block" },
-  qrUrl:    { fontSize:11, color:"#444", textAlign:"center", marginBottom:8, wordBreak:"break-all" },
-  qrHint:   { fontSize:12, color:"#666", textAlign:"center", lineHeight:1.6, marginBottom:24 },
-  printBtn: { width:"100%", background:"#1e1e1e", border:"1px solid #2a2a2a", color:"#f5f0e8", borderRadius:12, padding:"13px", fontSize:13, fontFamily:"'DM Mono',monospace", cursor:"pointer", letterSpacing:1 },
+  // Modals
+  overlay:       { position:"fixed", inset:0, background:"rgba(44,36,22,.6)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:500, backdropFilter:"blur(4px)", padding:20 },
+  modalBox:      { background:C.surface, border:`1px solid ${C.border}`, borderRadius:4, padding:"40px 44px", maxWidth:400, width:"100%", textAlign:"center", animation:"fadeUp .3s ease both", boxShadow:`0 8px 48px rgba(44,36,22,.12)`, position:"relative" },
+  modalOrnamentTop:{ fontSize:14, color:C.accentLight, marginBottom:12 },
+  modalTitle:    { fontFamily:"'Cormorant Garamond',serif", fontSize:26, fontWeight:300, fontStyle:"italic", color:C.text, marginBottom:12 },
+  modalSub:      { fontSize:13, color:C.textMuted, lineHeight:1.6 },
+  errorText:     { fontSize:11, color:"#c04040", marginTop:8 },
+  qrWrap:        { background:C.background, borderRadius:3, padding:16, display:"inline-flex", marginBottom:12, marginTop:16, border:`1px solid ${C.border}` },
+  qrImg:         { width:180, height:180, display:"block" },
+  qrUrl:         { fontSize:10, color:C.textLight, marginBottom:8, wordBreak:"break-all", letterSpacing:.5 },
 
-  adminPanel:   { background:"#141414", border:"1px solid #252525", borderRadius:20, padding:"28px 28px 32px", maxWidth:700, width:"95%", maxHeight:"88vh", display:"flex", flexDirection:"column", animation:"fadeUp .3s ease both", overflow:"hidden" },
-  adminHeader:  { display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:20, flexShrink:0 },
-  adminToolbar: { display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", marginBottom:18, flexShrink:0, borderBottom:"1px solid #1e1e1e", paddingBottom:16 },
-  adminToolBtn: { background:"#1e1e1e", border:"1px solid #2a2a2a", color:"#aaa", borderRadius:8, padding:"6px 12px", fontSize:11, cursor:"pointer", fontFamily:"'DM Mono',monospace" },
-  deleteBtn:    { background:"#2a0e0e", border:"1px solid #6a2020", color:"#e06060", borderRadius:8, padding:"6px 14px", fontSize:11, cursor:"pointer", fontFamily:"'DM Mono',monospace" },
-  confirmRow:   { display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" },
-
-  adminGrid:    { display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))", gap:10, overflowY:"auto", paddingRight:4 },
-  adminThumb:   { position:"relative", borderRadius:10, overflow:"hidden", cursor:"pointer", background:"#1a1a1a", aspectRatio:"1", transition:"outline .15s" },
-  adminThumbMedia: { width:"100%", height:"100%", objectFit:"cover", display:"block" },
-  adminCheckbox:{ position:"absolute", top:6, left:6, width:20, height:20, borderRadius:5, border:"2px solid", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .15s" },
-  adminThumbLabel: { position:"absolute", bottom:0, left:0, right:0, background:"rgba(0,0,0,.7)", padding:"4px 6px", display:"flex", alignItems:"center", gap:5, overflow:"hidden" },
-  adminThumbAvatar: { width:16, height:16, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:7, fontWeight:700, color:"#fff", flexShrink:0 },
-  videoBadge:   { position:"absolute", top:6, right:6, background:"rgba(0,0,0,.65)", borderRadius:4, padding:"2px 5px", fontSize:9, color:"#fff" },
+  // Admin
+  adminPanel:  { background:C.surface, border:`1px solid ${C.border}`, borderRadius:4, padding:"28px 28px 32px", maxWidth:680, width:"95%", maxHeight:"88vh", display:"flex", flexDirection:"column", animation:"fadeUp .3s ease both", overflow:"hidden", boxShadow:`0 8px 48px rgba(44,36,22,.1)` },
+  adminHead:   { display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:16, flexShrink:0 },
+  adminHeadText:{ textAlign:"left" },
+  closeBtn:    { background:"none", border:"none", color:C.textMuted, fontSize:16, cursor:"pointer", padding:"2px 6px" },
+  adminToolbar:{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap", margin:"16px 0", flexShrink:0 },
+  countLabel:  { fontSize:11, color:C.textMuted, fontStyle:"italic" },
+  confirmRow:  { display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" },
+  adminGrid:   { display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))", gap:10, overflowY:"auto" },
+  adminThumb:  { position:"relative", borderRadius:2, overflow:"hidden", cursor:"pointer", background:C.border, aspectRatio:"1", transition:"outline .15s" },
+  adminMedia:  { width:"100%", height:"100%", objectFit:"cover", display:"block" },
+  adminCheck:  { position:"absolute", top:5, left:5, width:18, height:18, borderRadius:3, border:"1.5px solid", display:"flex", alignItems:"center", justifyContent:"center", transition:"all .15s" },
+  adminLabel:  { position:"absolute", bottom:0, left:0, right:0, background:"rgba(0,0,0,.55)", padding:"3px 5px" },
+  videoBadge:  { position:"absolute", top:5, right:5, background:"rgba(0,0,0,.55)", borderRadius:2, padding:"1px 5px", fontSize:8, color:"#fff" },
 };
