@@ -58,7 +58,7 @@ function AdminLogin({ onSuccess, onClose }) {
       <div style={{ ...s.modal, ...(shake ? { animation:"shake .5s ease" } : {}) }} onClick={e => e.stopPropagation()}>
         <button style={s.closeX} onClick={onClose}>✕</button>
         <div style={s.modalEyebrow}>AREA RISERVATA</div>
-        <h3 style={s.modalHeading}>Amministrazione</h3>
+        <h3 style={s.modalHeading}>Amministratore</h3>
         <Rule width={180} />
         <p style={s.modalBody}>Inserisci la password per gestire la galleria.</p>
         <input
@@ -561,7 +561,7 @@ export default function App() {
         <div style={{ maxWidth:1040, margin:"0 auto", padding:"14px 28px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16 }}>
           <div>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:400, fontStyle:"italic", color:C.white, letterSpacing:.3 }}>{config.eventName}</div>
-            {config.eventSubtitle && <div style={{ fontSize:9, color:C.gold, letterSpacing:3, textTransform:"uppercase", marginTop:2 }}>{config.eventSubtitle}</div>}
+            {config.eventSubtitle && <div style={{ fontSize:10, color:C.gold, letterSpacing:3, textTransform:"uppercase", marginTop:2 }}>{config.eventSubtitle}</div>}
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <button style={s.hdrBtn} onClick={()=>setShowAdminLogin(true)} title="Admin">⚙</button>
