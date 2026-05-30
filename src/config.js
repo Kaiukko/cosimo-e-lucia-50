@@ -4,7 +4,7 @@
 
 const config = {
   eventName:     "Cosimo & Lucia",
-  eventSubtitle: "50° Anniversario di Matrimonio",
+  eventSubtitle: "50 Anni Insieme",
   appUrl:        "https://cosimo-e-lucia-50.vercel.app",
 
   adminPassword: process.env.REACT_APP_ADMIN_PASSWORD || "cambiami123",
