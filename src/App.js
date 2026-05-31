@@ -350,7 +350,7 @@ function NameScreen({ onEnter }) {
         >
           Entra nella galleria
         </button>
-        <p style={{ fontSize:10, color:C.whiteFaint, marginTop:16, letterSpacing:1, fontStyle:"italic" }}>
+        <p style={{ fontSize:12, color:C.whiteFaint, marginTop:16, letterSpacing:1, fontStyle:"italic" }}>
           Le tue foto saranno visibili a tutti gli ospiti
         </p>
       </div>
@@ -582,7 +582,7 @@ export default function App() {
       {/* Gallery */}
       <div style={{ maxWidth:1040, margin:"40px auto 0", padding:"0 24px", position:"relative", zIndex:1 }}>
         <div style={{ textAlign:"center", marginBottom:24 }}>
-          <div style={s.eyebrow}>I RICORDI DELLA SERATA</div>
+          <div style={s.eyebrow}>I RICORDI DELLA GIORNATA</div>
           <Rule width={200} />
           {!loading && posts.length>0 && <div style={{ fontSize:11, color:C.whiteFaint, letterSpacing:2 }}>{posts.length} {posts.length===1?"momento condiviso":"momenti condivisi"}</div>}
         </div>
