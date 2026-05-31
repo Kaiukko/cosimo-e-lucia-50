@@ -58,7 +58,7 @@ function AdminLogin({ onSuccess, onClose }) {
       <div style={{ ...s.modal, ...(shake ? { animation:"shake .5s ease" } : {}) }} onClick={e => e.stopPropagation()}>
         <button style={s.closeX} onClick={onClose}>✕</button>
         <div style={s.modalEyebrow}>AREA RISERVATA</div>
-        <h3 style={s.modalHeading}>Amministratore</h3>
+        <h3 style={s.modalHeading}>Amministrazione</h3>
         <Rule width={180} />
         <p style={s.modalBody}>Inserisci la password per gestire la galleria.</p>
         <input
@@ -165,7 +165,7 @@ function AdminPanel({ posts, onDelete, onClose }) {
 // ─── QR Modal ─────────────────────────────────────────────────────────────────
 function QRModal({ onClose }) {
   const url    = config.appUrl;
-  const qrSrc  = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&bgcolor=0e1117&color=c9a84c&data=${encodeURIComponent(url)}`;
+  const qrSrc  = `https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=300&dark=c9a84c&light=0e1117&ecLevel=H`;
 
   const handlePrint = () => {
     const win = window.open("", "_blank");
@@ -194,7 +194,7 @@ function QRModal({ onClose }) {
         <div class="eyebrow">Galleria degli Ospiti</div>
         <div class="title">${config.eventName}</div>
         <div class="sub">${config.eventSubtitle || ""}</div>
-        <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&bgcolor=ffffff&color=1a1008&data=${encodeURIComponent(url)}" />
+        <img class="qr" src="https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=400&dark=1a1008&light=ffffff&ecLevel=H" />
         <div class="rule"><div class="rule-line"></div><div class="dot">✦</div><div class="rule-line r"></div></div>
         <div class="cta">Inquadra il codice con la fotocamera<br>e condividi i tuoi ricordi</div>
         <div class="url">${url}</div>
@@ -561,7 +561,7 @@ export default function App() {
         <div style={{ maxWidth:1040, margin:"0 auto", padding:"14px 28px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16 }}>
           <div>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:24, fontWeight:400, fontStyle:"italic", color:C.white, letterSpacing:.3 }}>{config.eventName}</div>
-            {config.eventSubtitle && <div style={{ fontSize:10, color:C.gold, letterSpacing:3, textTransform:"uppercase", marginTop:2 }}>{config.eventSubtitle}</div>}
+            {config.eventSubtitle && <div style={{ fontSize:9, color:C.gold, letterSpacing:3, textTransform:"uppercase", marginTop:2 }}>{config.eventSubtitle}</div>}
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:12 }}>
             <button style={s.hdrBtn} onClick={()=>setShowAdminLogin(true)} title="Admin">⚙</button>
