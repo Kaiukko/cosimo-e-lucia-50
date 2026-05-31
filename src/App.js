@@ -350,7 +350,7 @@ function NameScreen({ onEnter }) {
         >
           Entra nella galleria
         </button>
-        <p style={{ fontSize:12, color:C.whiteFaint, marginTop:16, letterSpacing:1, fontStyle:"italic" }}>
+        <p style={{ fontSize:18, color:C.whiteFaint, marginTop:16, letterSpacing:1, fontStyle:"italic" }}>
           Le tue foto saranno visibili a tutti gli ospiti
         </p>
       </div>
