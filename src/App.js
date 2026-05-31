@@ -426,7 +426,7 @@ function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }
             <div style={{ textAlign:"center", padding:28 }}>
               <div style={{ fontSize:26, color:C.gold, marginBottom:12, opacity:.7 }}>✦</div>
               <div style={{ fontSize:15, color:C.whiteMuted, marginBottom:5, fontFamily:"'Playfair Display',serif", fontStyle:"italic" }}>Trascina foto e video qui</div>
-              <div style={{ fontSize:11, color:C.whiteFaint, letterSpacing:1 }}>oppure clicca per scegliere · max {config.maxFilesPerUpload} file</div>
+              <div style={{ fontSize:12, color:C.whiteFaint, letterSpacing:1 }}>oppure clicca per scegliere · max {config.maxFilesPerUpload} file</div>
             </div>
           ) : (
             <div style={{ display:"flex", flexWrap:"wrap", gap:8, padding:14, width:"100%" }}>
