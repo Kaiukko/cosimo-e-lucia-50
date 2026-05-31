@@ -454,7 +454,7 @@ function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }
         {uploading && <div style={{ height:1, background:C.border, borderRadius:2, marginBottom:14, overflow:"hidden" }}><div style={{ height:"100%", background:C.gold, width:`${prog}%`, transition:"width .3s ease" }}/></div>}
 
         <textarea
-          style={s.elegantTextarea, textAlign:"center"}
+          style={s.elegantTextarea}
           placeholder="Una didascalia per questo ricordo... (opzionale)"
           value={caption} onChange={e=>setCaption(e.target.value)} rows={2} disabled={uploading}
         />
