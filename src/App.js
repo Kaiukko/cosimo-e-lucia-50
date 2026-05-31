@@ -454,7 +454,7 @@ function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }
         {uploading && <div style={{ height:1, background:C.border, borderRadius:2, marginBottom:14, overflow:"hidden" }}><div style={{ height:"100%", background:C.gold, width:`${prog}%`, transition:"width .3s ease" }}/></div>}
 
         <textarea
-          style={s.elegantTextarea, textAlign: 'center'}
+          style={s.elegantTextarea}
           placeholder="Una didascalia per questo ricordo... (opzionale)"
           value={caption} onChange={e=>setCaption(e.target.value)} rows={2} disabled={uploading}
         />
@@ -643,7 +643,7 @@ const s = {
   heroTitle:   { fontFamily:"'Playfair Display',serif", fontSize:52, fontWeight:400, color:C.white, marginBottom:6, fontStyle:"italic", lineHeight:1.1 },
 
   lineInput:   { width:"100%", background:"transparent", border:"none", borderBottom:`1px solid ${C.border}`, padding:"12px 4px", fontSize:16, fontFamily:"'Jost',sans-serif", color:C.white, outline:"none", letterSpacing:.5 },
-  elegantTextarea:{ width:"100%", background:C.bgElevated, border:`1px solid ${C.border}`, borderRadius:3, padding:"12px 14px", fontSize:14, fontFamily:"'Playfair Display',serif", fontStyle:"italic", color:C.whiteMuted, outline:"none", resize:"none", lineHeight:1.6, marginBottom:14 },
+  elegantTextarea:{ width:"100%", textAlign: 'center', background:C.bgElevated, border:`1px solid ${C.border}`, borderRadius:3, padding:"12px 14px", fontSize:14, fontFamily:"'Playfair Display',serif", fontStyle:"italic", color:C.whiteMuted, outline:"none", resize:"none", lineHeight:1.6, marginBottom:14 },
   thumbMedia:  { width:"100%", height:"100%", objectFit:"cover", display:"block" },
   thumbX:      { position:"absolute", top:3, right:3, background:"rgba(0,0,0,.7)", border:"none", color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:8, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
 
