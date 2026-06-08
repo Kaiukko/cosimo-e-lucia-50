@@ -98,3 +98,34 @@ export async function deletePost(post) {
 export async function deletePosts(posts) {
   await Promise.all(posts.map(deletePost));
 }
+
+/** Recupera i commenti di un post */
+export async function fetchComments(postId) {
+  const { data, error } = await supabase
+    .from("comments")
+    .select("*")
+    .eq("post_id", postId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+/** Salva un commento */
+export async function saveComment(comment) {
+  const { data, error } = await supabase
+    .from("comments")
+    .insert(comment)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Elimina un commento (admin) */
+export async function deleteComment(id) {
+  const { error } = await supabase
+    .from("comments")
+    .delete()
+    .eq("id", id);
+  if (error) throw error;
+}
