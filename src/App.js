@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { supabase } from "./supabaseClient";
-import { uploadFiles, savePosts, fetchPosts, updateLikes, deletePosts } from "./api";
+import { uploadFiles, savePosts, fetchPosts, updateLikes, deletePosts, fetchComments, saveComment, deleteComment } from "./api";
 import { getAvatarColor, getInitials, timeAgo } from "./utils";
 import config from "./config";
 
@@ -350,7 +350,7 @@ function NameScreen({ onEnter }) {
         >
           Entra nella galleria
         </button>
-        <p style={{ fontSize:16, color:C.whiteFaint, marginTop:16, letterSpacing:1, fontStyle:"italic" }}>
+        <p style={{ fontSize:10, color:C.whiteFaint, marginTop:16, letterSpacing:1, fontStyle:"italic" }}>
           Le tue foto saranno visibili a tutti gli ospiti
         </p>
       </div>
@@ -425,8 +425,8 @@ function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }
           {files.length===0 ? (
             <div style={{ textAlign:"center", padding:28 }}>
               <div style={{ fontSize:26, color:C.gold, marginBottom:12, opacity:.7 }}>✦</div>
-              <div style={{ fontSize:16, color:C.whiteMuted, marginBottom:5, fontFamily:"'Playfair Display',serif", fontStyle:"italic" }}>Trascina foto e video qui</div>
-              <div style={{ fontSize:12, color:C.whiteFaint, letterSpacing:1 }}>oppure clicca per scegliere · max {config.maxFilesPerUpload} file</div>
+              <div style={{ fontSize:15, color:C.whiteMuted, marginBottom:5, fontFamily:"'Playfair Display',serif", fontStyle:"italic" }}>Trascina foto e video qui</div>
+              <div style={{ fontSize:11, color:C.whiteFaint, letterSpacing:1 }}>oppure clicca per scegliere · max {config.maxFilesPerUpload} file</div>
             </div>
           ) : (
             <div style={{ display:"flex", flexWrap:"wrap", gap:8, padding:14, width:"100%" }}>
@@ -471,8 +471,94 @@ function UploadPanel({ guestName, initials, onPublished, hasPosts, onSlideshow }
   );
 }
 
+// ─── Comments Section ─────────────────────────────────────────────────────────
+function CommentsSection({ postId, guestName, initials }) {
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [open, setOpen]         = useState(false);
+  const [body, setBody]         = useState("");
+  const [posting, setPosting]   = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setLoading(true);
+    fetchComments(postId).then(setComments).catch(console.error).finally(() => setLoading(false));
+  }, [open, postId]);
+
+  useEffect(() => {
+    if (!open) return;
+    const ch = supabase.channel(`comments-${postId}`)
+      .on("postgres_changes",
+        { event:"INSERT", schema:"public", table:"comments", filter:`post_id=eq.${postId}` },
+        payload => setComments(prev => prev.find(c => c.id===payload.new.id) ? prev : [...prev, payload.new])
+      ).subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [open, postId]);
+
+  const handleSubmit = async () => {
+    if (!body.trim()) return;
+    setPosting(true);
+    try {
+      const saved = await saveComment({ post_id:postId, author:guestName, avatar:initials, color:getAvatarColor(initials), body:body.trim() });
+      setComments(prev => prev.find(c => c.id===saved.id) ? prev : [...prev, saved]);
+      setBody("");
+    } catch(err) { console.error(err); }
+    finally { setPosting(false); }
+  };
+
+  return (
+    <div style={{ borderTop:`1px solid ${C.border}` }}>
+      <button
+        style={{ background:"none", border:"none", cursor:"pointer", width:"100%", padding:"10px 18px", display:"flex", alignItems:"center", gap:8, color:open?C.gold:C.whiteFaint, fontSize:11, fontFamily:"'Jost',sans-serif", letterSpacing:1, textTransform:"uppercase", transition:"color .15s" }}
+        onClick={() => setOpen(o => !o)}
+      >
+        <span style={{ fontSize:13 }}>{open?"▾":"▸"}</span>
+        {!open && comments.length>0 ? `${comments.length} commento${comments.length>1?"i":""}` : "Commenti"}
+      </button>
+      {open && (
+        <div style={{ padding:"0 18px 16px", display:"flex", flexDirection:"column", gap:10 }}>
+          {loading ? (
+            <div style={{ fontSize:12, color:C.whiteFaint, fontStyle:"italic", textAlign:"center", padding:"8px 0" }}>Caricamento...</div>
+          ) : comments.length===0 ? (
+            <div style={{ fontSize:12, color:C.whiteFaint, fontStyle:"italic", textAlign:"center", padding:"8px 0" }}>Nessun commento ancora. Sii il primo!</div>
+          ) : comments.map(c => (
+            <div key={c.id} style={{ display:"flex", gap:9, alignItems:"flex-start" }}>
+              <div style={{ width:24, height:24, borderRadius:"50%", background:c.color, display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, fontWeight:700, color:"#fff", flexShrink:0, marginTop:2 }}>{c.avatar}</div>
+              <div style={{ flex:1, background:C.bgElevated, borderRadius:3, padding:"8px 12px", border:`1px solid ${C.border}` }}>
+                <div style={{ display:"flex", alignItems:"baseline", gap:8, marginBottom:4 }}>
+                  <span style={{ fontSize:11, color:C.white, fontFamily:"'Jost',sans-serif", fontWeight:500 }}>{c.author}</span>
+                  <span style={{ fontSize:9, color:C.whiteFaint, letterSpacing:.5 }}>{timeAgo(c.created_at)}</span>
+                </div>
+                <p style={{ fontSize:13, color:C.whiteMuted, lineHeight:1.55, fontFamily:"'Playfair Display',serif", fontStyle:"italic" }}>{c.body}</p>
+              </div>
+            </div>
+          ))}
+          <div style={{ display:"flex", gap:8, alignItems:"flex-end", marginTop:4 }}>
+            <div style={{ width:24, height:24, borderRadius:"50%", background:getAvatarColor(initials), display:"flex", alignItems:"center", justifyContent:"center", fontSize:8, fontWeight:700, color:"#fff", flexShrink:0, marginBottom:2 }}>{initials}</div>
+            <div style={{ flex:1, position:"relative" }}>
+              <textarea
+                style={{ width:"100%", background:C.bgElevated, border:`1px solid ${C.border}`, borderRadius:3, padding:"8px 36px 8px 12px", fontSize:13, fontFamily:"'Playfair Display',serif", fontStyle:"italic", color:C.whiteMuted, outline:"none", resize:"none", lineHeight:1.5 }}
+                placeholder="Scrivi un commento..."
+                value={body}
+                onChange={e => setBody(e.target.value)}
+                onKeyDown={e => { if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); handleSubmit(); }}}
+                rows={2}
+                disabled={posting}
+              />
+              <button
+                style={{ position:"absolute", right:8, bottom:8, background:"none", border:"none", cursor:"pointer", color:body.trim()?C.gold:C.whiteFaint, fontSize:16, transition:"color .15s", padding:0, lineHeight:1 }}
+                onClick={handleSubmit} disabled={posting || !body.trim()}
+              >{posting?"⟳":"↑"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Post Card ────────────────────────────────────────────────────────────────
-function PostCard({ post, layout, onLike, onExpand }) {
+function PostCard({ post, layout, onLike, onExpand, guestName, initials }) {
   return (
     <div style={{ ...(layout==="grid"?s.gridCard:s.feedCard) }}>
       <div style={{ position:"relative", cursor:"pointer", overflow:"hidden", background:C.bg }} onClick={()=>post.type==="image"&&onExpand(post.url)}>
@@ -480,15 +566,10 @@ function PostCard({ post, layout, onLike, onExpand }) {
           ? <video src={post.url} style={s.cardMedia} controls playsInline/>
           : <img src={post.url} alt={post.caption||""} style={s.cardMedia} loading="lazy"/>
         }
-        {post.type==="image" && (
-          <div style={{ position:"absolute", inset:0, background:"linear-gradient(to top, rgba(14,17,23,.6) 0%, transparent 50%)", opacity:0, transition:"opacity .3s", display:"flex", alignItems:"flex-end", justifyContent:"flex-end", padding:10 }}>
-            <div style={{ color:C.gold, fontSize:12, letterSpacing:1 }}>ESPANDI</div>
-          </div>
-        )}
       </div>
       <div style={{ padding:"16px 18px 14px" }}>
         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-          <div style={{ width:28,height:28,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0, background:post.color }}>{post.avatar}</div>
+          <div style={{ width:28,height:28,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#fff",flexShrink:0,background:post.color }}>{post.avatar}</div>
           <div>
             <div style={{ fontSize:13, color:C.white, fontFamily:"'Jost',sans-serif", letterSpacing:.3 }}>{post.author}</div>
             <div style={{ fontSize:10, color:C.whiteFaint, letterSpacing:.5 }}>{timeAgo(post.created_at)}</div>
@@ -502,6 +583,7 @@ function PostCard({ post, layout, onLike, onExpand }) {
           </button>
         </div>
       </div>
+      <CommentsSection postId={post.id} guestName={guestName} initials={initials}/>
     </div>
   );
 }
@@ -582,7 +664,7 @@ export default function App() {
       {/* Gallery */}
       <div style={{ maxWidth:1040, margin:"40px auto 0", padding:"0 24px", position:"relative", zIndex:1 }}>
         <div style={{ textAlign:"center", marginBottom:24 }}>
-          <div style={s.eyebrow}>I RICORDI DELLA GIORNATA</div>
+          <div style={s.eyebrow}>I RICORDI DELLA SERATA</div>
           <Rule width={200} />
           {!loading && posts.length>0 && <div style={{ fontSize:11, color:C.whiteFaint, letterSpacing:2 }}>{posts.length} {posts.length===1?"momento condiviso":"momenti condivisi"}</div>}
         </div>
@@ -599,7 +681,7 @@ export default function App() {
             <div style={{ fontFamily:"'Playfair Display',serif", fontStyle:"italic" }}>Sii il primo a condividere un ricordo</div>
           </div>
         ) : posts.map(post => (
-          <PostCard key={post.id} post={post} layout={view} onLike={toggleLike} onExpand={setLightbox}/>
+          <PostCard key={post.id} post={post} layout={view} onLike={toggleLike} onExpand={setLightbox} guestName={guestName} initials={initials}/>
         ))}
       </div>
 
@@ -643,7 +725,7 @@ const s = {
   heroTitle:   { fontFamily:"'Playfair Display',serif", fontSize:52, fontWeight:400, color:C.white, marginBottom:6, fontStyle:"italic", lineHeight:1.1 },
 
   lineInput:   { width:"100%", background:"transparent", border:"none", borderBottom:`1px solid ${C.border}`, padding:"12px 4px", fontSize:16, fontFamily:"'Jost',sans-serif", color:C.white, outline:"none", letterSpacing:.5 },
-  elegantTextarea:{ width:"100%", textAlign: 'center', background:C.bgElevated, border:`1px solid ${C.border}`, borderRadius:3, padding:"12px 14px", fontSize:14, fontFamily:"'Playfair Display',serif", fontStyle:"italic", color:C.whiteMuted, outline:"none", resize:"none", lineHeight:1.6, marginBottom:14 },
+  elegantTextarea:{ width:"100%", background:C.bgElevated, border:`1px solid ${C.border}`, borderRadius:3, padding:"12px 14px", fontSize:14, fontFamily:"'Playfair Display',serif", fontStyle:"italic", color:C.whiteMuted, outline:"none", resize:"none", lineHeight:1.6, marginBottom:14 },
   thumbMedia:  { width:"100%", height:"100%", objectFit:"cover", display:"block" },
   thumbX:      { position:"absolute", top:3, right:3, background:"rgba(0,0,0,.7)", border:"none", color:"#fff", borderRadius:"50%", width:16, height:16, fontSize:8, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
 
